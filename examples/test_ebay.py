@@ -27,20 +27,20 @@ cookie = {"domain": ".sweatytacobo.com",
     "secure": False,
     "value": "268881515.13222266.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)"
 }
-
 response = do_command(url, "addCookie", cookie)
 
-"""
 # Set User Agent
-data = {'value': 'Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) '
+data = {'userAgent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) '
         + 'AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334'
         + ' Safari/7534.48.3'}
 response = do_command(url, "setUserAgent", data)
 
+
 # Open URL
-data = {'value': 'http://ebay.de'}
+data = {'url': 'http://ebay.de'}
 response = do_command(url, "open", data)
 
+"""
 # Get Resources
 response = do_command(url, "getResources")
 resources = json.loads(response.text)["result"]

@@ -43,6 +43,13 @@ Tab.prototype.addCookie = function(name, value, domain, path, httponly, secure, 
 };
 
 
+Tab.prototype.setUserAgent = function(userAgent, callback) {
+    var self = this;
+    self.page.settings.userAgent = userAgent;
+    callback({"success": true});
+};
+
+
 Tab.prototype.handle_request = function(request, response) {
     var self = this;
     var data = JSON.parse(request.post);
@@ -61,6 +68,9 @@ Tab.prototype.handle_request = function(request, response) {
         case "/addCookie":
             self.addCookie(data.name, data.value, data.domain, data.path,
                            data.httponly, data.secure, data.expires, callback);
+            break; 
+        case "/setUserAgent":
+            self.setUserAgent(data.userAgent, callback);
             break;
         default:
             console.log("WHAT DO YOU WANT?");
@@ -71,4 +81,4 @@ Tab.prototype.handle_request = function(request, response) {
     } 
 };
 
-var t = new Tab();
+var tab = new Tab();
