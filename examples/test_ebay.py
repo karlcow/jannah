@@ -3,26 +3,34 @@ import json
 
 
 def do_command(url, command, data={}):
-    print "executing %s/%s" % (url, command),
+    print "executing %s/%s      " % (url, command),
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post('%s/%s' % (url, command),
                              data=json.dumps(data), headers=headers)
     print response.status_code
-    if response.status_code == 500:
-        print response.text
+    print response.text
     return response
 
 # Get a tab from the Netherlands
+"""
 data = {'country': 'NL'}
 response = do_command("http://82.196.12.25:8421", "new", data)
 url = json.loads(response.text)["result"]
+"""
 
+url = "http://127.0.0.1:8080"
 # Set Cookies
-cookies = [{'name': 'Ryu', 'value': 'Hadouken', 'domain': 'Street Fighter',
-            'path': 'Akuma', 'expires': 'Fri, 31 Dec 9999 23:59:59 GMT'}]
-data = {'value': cookies}
-response = do_command(url, "addCookies", data)
+cookie = {"domain": ".sweatytacobo.com",
+    "httponly": False,
+    "name": "__utmz",
+    "path": "/",
+    "secure": False,
+    "value": "268881515.13222266.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)"
+}
 
+response = do_command(url, "addCookie", cookie)
+
+"""
 # Set User Agent
 data = {'value': 'Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) '
         + 'AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334'
@@ -49,3 +57,4 @@ print "\nThe Screenshot " + screenshot_url + "\n"
 
 # Destroy Tab
 response = do_command(url, "destroy")
+"""
