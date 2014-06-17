@@ -1,18 +1,48 @@
-/* global require, module, window, phantom */
+/* global require, module, window, phantom, slimer */
 var webpage = require("webpage");
 var webserver = require('webserver');
 
 
 var Tab = module.exports = function() {
-    this._resources = {};
+    this._time = 0;
     this.init();
 };
 
+
 Tab.prototype.init = function() {
     var self = this;
+    self._resources = {};
+    self._orphanResources = [];
     window.close();
     self.page = webpage.create();
     self.page.viewportSize = { width: 1280, height: 800 };
+    self.page.onResourceRequested = function(requestData) {
+        console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
+        self._resources[requestData.id] = {
+            request: requestData,
+            response: null,
+            blocking: Date.now() - self._time,
+            waiting: -1,
+            receiving: -1
+        };
+        self._orphanResources.push(requestData.id);
+    };  
+    self.page.onResourceReceived = function(response) {
+        switch (response.stage) {
+            case 'start':
+                self._resources[response.id].waiting = response.time.getTime() - self._resources[response.id].request.time.getTime();
+                break;
+            case 'end':
+                self._resources[response.id].receiving = response.time.getTime() - self._resources[response.id].response.time.getTime();
+                self._orphanResources.splice(self._orphanResources.indexOf(response.id), 1);
+                break;
+            default:
+                break;
+        }
+        self._resources[response.id].response = response;
+        console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
+        self._resources[response.id].response = response;
+    };
     self.server = webserver.create();
     self.service = self.server.listen('127.0.0.1:8080',
                                       function (request, response) {
@@ -23,8 +53,13 @@ Tab.prototype.init = function() {
 
 Tab.prototype.open = function(url, callback) {
     var self = this;
-    self.page.openUrl(url).then(function(status){
-        callback(status);
+    self._resources = {};
+    this._time = Date.now();
+    self.page.openUrl(url).then(function(status) {
+        while (self._orphanResources.length > 0)
+            slimer.wait(1);
+        callback({success: status == 'success' ? true : false,
+                  elapsedTime: Date.now() - self._time});
     });
 };
 
@@ -39,14 +74,20 @@ Tab.prototype.addCookie = function(name, value, domain, path, httponly, secure, 
         'secure':   secure ? secure : false,
         'expires':  expires ? expires : (new Date()).getTime() + 3600
     });
-    callback({"success": success});
+    callback({success: success});
 };
 
 
 Tab.prototype.setUserAgent = function(userAgent, callback) {
     var self = this;
     self.page.settings.userAgent = userAgent;
-    callback({"success": true});
+    callback({success: true});
+};
+
+
+Tab.prototype.getResources = function(callback) {
+    var self = this;
+    callback({success: true, resources: self._resources});
 };
 
 
@@ -72,6 +113,9 @@ Tab.prototype.handle_request = function(request, response) {
         case "/setUserAgent":
             self.setUserAgent(data.userAgent, callback);
             break;
+        case "/getResources":
+            self.getResources(callback);
+            break;
         default:
             console.log("WHAT DO YOU WANT?");
             response.statusCode = 500;
@@ -81,4 +125,4 @@ Tab.prototype.handle_request = function(request, response) {
     } 
 };
 
-var tab = new Tab();
+new Tab();

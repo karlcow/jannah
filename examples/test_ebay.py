@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 
 
 def do_command(url, command, data={}):
@@ -8,7 +9,7 @@ def do_command(url, command, data={}):
     response = requests.post('%s/%s' % (url, command),
                              data=json.dumps(data), headers=headers)
     print response.status_code
-    print response.text
+    print response.text.encode('utf-8').strip()
     return response
 
 # Get a tab from the Netherlands
@@ -17,8 +18,9 @@ data = {'country': 'NL'}
 response = do_command("http://82.196.12.25:8421", "new", data)
 url = json.loads(response.text)["result"]
 """
-
 url = "http://127.0.0.1:8080"
+
+
 # Set Cookies
 cookie = {"domain": ".sweatytacobo.com",
     "httponly": False,
@@ -40,16 +42,20 @@ response = do_command(url, "setUserAgent", data)
 data = {'url': 'http://ebay.de'}
 response = do_command(url, "open", data)
 
-"""
+#time.sleep(5)
+
 # Get Resources
 response = do_command(url, "getResources")
-resources = json.loads(response.text)["result"]
-resources.sort(key=lambda x: x, reverse=True)
+resources = json.loads(response.text)["resources"]
+keys = sorted(resources.keys(), key=lambda x: int(x))
 print "\nThe Resources \n"
-for resource in resources:
-    print resource
+for key in keys:
+    print key, resources[key]
 print ""
 
+
+
+"""
 # Take Screenshot
 response = do_command(url, "takeScreenshot")
 screenshot_url = json.loads(response.text)["result"]
