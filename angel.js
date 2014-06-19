@@ -1,8 +1,9 @@
 /* global require, module, window, phantom, slimer */
-var webpage = require("webpage");
-var webserver = require('webserver');
+var webpage = require("webpage"),
+    webserver = require('webserver');
 
-var Tab = module.exports = function() {
+
+var Angel = module.exports = function() {
     this._time = 0;
     this._resources = {};
     this._orphanResources = [];
@@ -10,7 +11,7 @@ var Tab = module.exports = function() {
 };
 
 
-Tab.prototype.init = function() {
+Angel.prototype.init = function() {
     var self = this;
     window.close();
     self.page = webpage.create();
@@ -19,12 +20,12 @@ Tab.prototype.init = function() {
     self.page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
     self.page.onResourceReceived = function(response) {self._onResourceReceived(response);};
     self.service = self.server.listen('127.0.0.1:8080', function (request, response) {
-                                          self.handle_request(request, response);
+                                          self._handleRequest(request, response);
     });
 };
 
 
-Tab.prototype._onResourceRequested = function (requestData) {
+Angel.prototype._onResourceRequested = function (requestData) {
     var self = this;
     console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
     self._resources[requestData.id] = {
@@ -38,7 +39,7 @@ Tab.prototype._onResourceRequested = function (requestData) {
 };
 
 
-Tab.prototype._onResourceReceived = function(response) {
+Angel.prototype._onResourceReceived = function(response) {
     var self = this;
     switch (response.stage) {
         case 'start':
@@ -57,7 +58,7 @@ Tab.prototype._onResourceReceived = function(response) {
 };
 
 
-Tab.prototype.open = function(url, callback) {
+Angel.prototype._open = function(url, callback) {
     var self = this;
     self._resources = {};
     self._orphanResources = [];
@@ -73,7 +74,7 @@ Tab.prototype.open = function(url, callback) {
 };
 
 
-Tab.prototype.addCookie = function(name, value, domain, path, httponly, secure, expires, callback) {
+Angel.prototype._addCookie = function(name, value, domain, path, httponly, secure, expires, callback) {
     var success = phantom.addCookie({
         'name':     name,
         'value':    value,
@@ -87,20 +88,20 @@ Tab.prototype.addCookie = function(name, value, domain, path, httponly, secure, 
 };
 
 
-Tab.prototype.setUserAgent = function(userAgent, callback) {
+Angel.prototype._setUserAgent = function(userAgent, callback) {
     var self = this;
     self.page.settings.userAgent = userAgent;
     callback({success: true});
 };
 
 
-Tab.prototype.getResources = function(callback) {
+Angel.prototype._getResources = function(callback) {
     var self = this;
     callback({success: true, resources: self._resources});
 };
 
 
-Tab.prototype.getScreenshot = function(callback) {
+Angel.prototype._getScreenshot = function(callback) {
     var self = this;
     var url = "/tmp/" + Date.now() + ".png";
     self.page.render(url);
@@ -109,7 +110,7 @@ Tab.prototype.getScreenshot = function(callback) {
 };
 
 
-Tab.prototype.destroy = function(callback) {
+Angel.prototype._destroy = function(callback) {
     var self = this;
     callback({success: true});
     self.page.close();
@@ -118,7 +119,7 @@ Tab.prototype.destroy = function(callback) {
 };
 
 
-Tab.prototype.handle_request = function(request, response) {
+Angel.prototype._handleRequest = function(request, response) {
     var self = this;
     var data = JSON.parse(request.post);
     console.log(request.url + " -- " + JSON.stringify(data));
@@ -131,23 +132,23 @@ Tab.prototype.handle_request = function(request, response) {
 
     switch(request.url) {
         case "/open":
-            self.open(data.url, callback);
+            self._open(data.url, callback);
             break;
         case "/addCookie":
-            self.addCookie(data.name, data.value, data.domain, data.path,
+            self._addCookie(data.name, data.value, data.domain, data.path,
                            data.httponly, data.secure, data.expires, callback);
             break; 
         case "/setUserAgent":
-            self.setUserAgent(data.userAgent, callback);
+            self._setUserAgent(data.userAgent, callback);
             break;
         case "/getResources":
-            self.getResources(callback);
+            self._getResources(callback);
             break;
         case "/getScreenshot":
-            self.getScreenshot(callback);
+            self._getScreenshot(callback);
             break;
         case "/destroy":
-            self.destroy(callback);
+            self._destroy(callback);
             break;
         default:
             console.log("WHAT DO YOU WANT?");
@@ -158,4 +159,4 @@ Tab.prototype.handle_request = function(request, response) {
     } 
 };
 
-new Tab();
+new Angel();
