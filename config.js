@@ -1,6 +1,11 @@
 var config = exports
   , env = process.env
+  , sugar = require('sugar')
   ;
+
+function getEnv(value, defaultValue) {
+  return typeof value !== 'undefined' ? value : defaultValue;
+}
 
 // GOD
 config.GOD_ADDRESS = getEnv(env.GOD_ADDRESS, "127.0.0.1");
