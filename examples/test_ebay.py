@@ -1,5 +1,6 @@
 import requests
 import json
+import sys
 import time
 
 
@@ -10,6 +11,9 @@ def do_command(url, command, data={}):
                              data=json.dumps(data), headers=headers)
     print response.status_code
     print response.text.encode('utf-8').strip()
+    if response.status_code == 500:
+        sys.exit(1)
+
     return response
 
 # Get a tab from the Netherlands

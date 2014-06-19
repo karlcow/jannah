@@ -1,64 +1,71 @@
 /* global require, module, window, phantom, slimer */
-//var childProcess = require('child_process');
 var webpage = require("webpage");
 var webserver = require('webserver');
 
-
 var Tab = module.exports = function() {
     this._time = 0;
+    this._resources = {};
+    this._orphanResources = [];
     this.init();
 };
 
 
 Tab.prototype.init = function() {
     var self = this;
-    self._resources = {};
-    self._orphanResources = [];
     window.close();
     self.page = webpage.create();
-    self.page.viewportSize = { width: 1280, height: 800 };
-    self.page.onResourceRequested = function(requestData) {
-        console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
-        self._resources[requestData.id] = {
-            request: requestData,
-            response: null,
-            blocking: Date.now() - self._time,
-            waiting: -1,
-            receiving: -1
-        };
-        self._orphanResources.push(requestData.id);
-    };  
-    self.page.onResourceReceived = function(response) {
-        switch (response.stage) {
-            case 'start':
-                self._resources[response.id].waiting = response.time.getTime() - self._resources[response.id].request.time.getTime();
-                break;
-            case 'end':
-                self._resources[response.id].receiving = response.time.getTime() - self._resources[response.id].response.time.getTime();
-                self._orphanResources.splice(self._orphanResources.indexOf(response.id), 1);
-                break;
-            default:
-                break;
-        }
-        self._resources[response.id].response = response;
-        console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
-        self._resources[response.id].response = response;
-    };
     self.server = webserver.create();
-    self.service = self.server.listen('127.0.0.1:8080',
-                                      function (request, response) {
+    self.page.viewportSize = { width: 1280, height: 800 };
+    self.page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
+    self.page.onResourceReceived = function(response) {self._onResourceReceived(response);};
+    self.service = self.server.listen('127.0.0.1:8080', function (request, response) {
                                           self.handle_request(request, response);
     });
+};
+
+
+Tab.prototype._onResourceRequested = function (requestData) {
+    var self = this;
+    console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
+    self._resources[requestData.id] = {
+        request: requestData,
+        response: null,
+        blocking: Date.now() - self._time,
+        waiting: -1,
+        receiving: -1
+    };
+    self._orphanResources.push(requestData.id);
+};
+
+
+Tab.prototype._onResourceReceived = function(response) {
+    var self = this;
+    switch (response.stage) {
+        case 'start':
+            self._resources[response.id].waiting = response.time.getTime() - self._resources[response.id].request.time.getTime();
+            break;
+        case 'end':
+            self._resources[response.id].receiving = response.time.getTime() - self._resources[response.id].response.time.getTime();
+            self._orphanResources.splice(self._orphanResources.indexOf(response.id), 1);
+            break;
+        default:
+            break;
+    }
+    self._resources[response.id].response = response;
+    console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
+    self._resources[response.id].response = response;
 };
 
 
 Tab.prototype.open = function(url, callback) {
     var self = this;
     self._resources = {};
+    self._orphanResources = [];
     this._time = Date.now();
+    
     self.page.openUrl(url).then(function(status) {
         while (self._orphanResources.length > 0) {
-            slimer.wait(1);
+           slimer.wait(1);
         }
         callback({success: status == 'success' ? true : false,
                   elapsedTime: Date.now() - self._time});
