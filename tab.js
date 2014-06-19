@@ -1,4 +1,5 @@
 /* global require, module, window, phantom, slimer */
+//var childProcess = require('child_process');
 var webpage = require("webpage");
 var webserver = require('webserver');
 
@@ -56,8 +57,9 @@ Tab.prototype.open = function(url, callback) {
     self._resources = {};
     this._time = Date.now();
     self.page.openUrl(url).then(function(status) {
-        while (self._orphanResources.length > 0)
+        while (self._orphanResources.length > 0) {
             slimer.wait(1);
+        }
         callback({success: status == 'success' ? true : false,
                   elapsedTime: Date.now() - self._time});
     });
@@ -91,6 +93,24 @@ Tab.prototype.getResources = function(callback) {
 };
 
 
+Tab.prototype.getScreenshot = function(callback) {
+    var self = this;
+    var url = "/tmp/" + Date.now() + ".png";
+    self.page.render(url);
+    //self.upload(url);
+    callback({success: true, url: url});
+};
+
+
+Tab.prototype.destroy = function(callback) {
+    var self = this;
+    callback({success: true});
+    self.page.close();
+    self.server.close();
+    phantom.exit();
+};
+
+
 Tab.prototype.handle_request = function(request, response) {
     var self = this;
     var data = JSON.parse(request.post);
@@ -115,6 +135,12 @@ Tab.prototype.handle_request = function(request, response) {
             break;
         case "/getResources":
             self.getResources(callback);
+            break;
+        case "/getScreenshot":
+            self.getScreenshot(callback);
+            break;
+        case "/destroy":
+            self.destroy(callback);
             break;
         default:
             console.log("WHAT DO YOU WANT?");

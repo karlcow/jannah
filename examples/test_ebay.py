@@ -54,13 +54,10 @@ for key in keys:
 print ""
 
 
-
-"""
 # Take Screenshot
-response = do_command(url, "takeScreenshot")
-screenshot_url = json.loads(response.text)["result"]
-print "\nThe Screenshot " + screenshot_url + "\n"
+response = do_command(url, "getScreenshot")
+#screenshot_url = json.loads(response.text)["result"]
+#print "\nThe Screenshot " + screenshot_url + "\n"
 
 # Destroy Tab
 response = do_command(url, "destroy")
-"""
