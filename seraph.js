@@ -92,7 +92,7 @@ Seraph.prototype.init = function() {
     app.use(compression());
     app.use(bodyParser());
     app.use(methodOverride());
-    app.use(bodyParser.urlencoded());
+    app.use(bodyParser.urlencoded({extended: true}));
 
     app.all('*', function(req, res) {
         self._handleRequest(req, res);

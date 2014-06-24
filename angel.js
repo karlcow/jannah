@@ -15,16 +15,16 @@ var Angel = module.exports = function() {
 Angel.prototype.init = function() {
     var self = this;
     self._port = parseInt(phantom.args[0]);
-    self.page = webpage.create();
-    self.server = webserver.create();
-    self.page.viewportSize = { width: 1280, height: 800 };
-    self.page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
-    self.page.onResourceReceived = function(response) {self._onResourceReceived(response);};
+    self._page = webpage.create();
+    self._server = webserver.create();
+    self._page.viewportSize = { width: 1280, height: 800 };
+    self._page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
+    self._page.onResourceReceived = function(response) {self._onResourceReceived(response);};
     try {
-        self.service = self.server.listen(self._port,
-                                          function (request, response) { 
-                                              self._handleRequest(request, response);
-                                          });
+        self._server.listen(self._port,
+                            function (request, response) { 
+                                self._handleRequest(request, response);
+                            });
         self._announceAngel();
 
     } catch (ex) {
@@ -89,7 +89,7 @@ Angel.prototype.open = function(url, callback) {
     self._orphanResources = [];
     this._time = Date.now();
     
-    self.page.openUrl(url).then(function(status) {
+    self._page.openUrl(url).then(function(status) {
         while (self._orphanResources.length > 0) {
            slimer.wait(1);
         }
@@ -115,7 +115,7 @@ Angel.prototype._addCookie = function(name, value, domain, path, httponly, secur
 
 Angel.prototype._setUserAgent = function(userAgent, callback) {
     var self = this;
-    self.page.settings.userAgent = userAgent;
+    self._page.settings.userAgent = userAgent;
     callback({success: true});
 };
 
@@ -129,7 +129,7 @@ Angel.prototype._getResources = function(callback) {
 Angel.prototype._getScreenshot = function(callback) {
     var self = this;
     var url = "/tmp/" + Date.now() + ".png";
-    self.page.render(url);
+    self._page.render(url);
     //self.upload(url);
     callback({success: true, url: url});
 };
@@ -138,8 +138,8 @@ Angel.prototype._getScreenshot = function(callback) {
 Angel.prototype._destroy = function(callback) {
     var self = this;
     callback({success: true});
-    self.page.close();
-    self.server.close();
+    self._page.close();
+    self._server.close();
     phantom.exit();
 };
 
