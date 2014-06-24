@@ -14,7 +14,13 @@
     "sugar": "1.x.x",
     "URIjs": "1.x.x",
     "winston": "0.x.x",
-    "winston-papertrail": "*"
+    "winston-papertrail": "*",
+    "portscanner": "*",
+    "express": "latest",
+    "compression": "*",
+    "body-parser": "*",
+    "method-override": "*",
+    "connect": "*"
   },
   "engines": {
     "node": "0.10.x",

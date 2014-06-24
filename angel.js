@@ -1,6 +1,7 @@
 /* global require, module, window, phantom, slimer */
 var webpage = require("webpage"),
-    webserver = require('webserver');
+    webserver = require('webserver'),
+    config = require('config');
 
 
 var Angel = module.exports = function() {
@@ -13,14 +14,38 @@ var Angel = module.exports = function() {
 
 Angel.prototype.init = function() {
     var self = this;
-    window.close();
+    self._port = parseInt(phantom.args[0]);
     self.page = webpage.create();
     self.server = webserver.create();
     self.page.viewportSize = { width: 1280, height: 800 };
     self.page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
     self.page.onResourceReceived = function(response) {self._onResourceReceived(response);};
-    self.service = self.server.listen('127.0.0.1:8080', function (request, response) {
-                                          self._handleRequest(request, response);
+    try {
+        self.service = self.server.listen(self._port,
+                                          function (request, response) { 
+                                              self._handleRequest(request, response);
+                                          });
+        self._announceAngel();
+
+    } catch (ex) {
+        phantom.exit();
+    }
+    console.log("Starting Angel on port: " + self._port);
+};
+
+
+Angel.prototype._announceAngel = function () {
+    var self = this;
+    var page = webpage.create();
+    //window.close();
+    var url = 'http://localhost:' + config.SEPHARM_PORT  + '/announceAngel',
+        data = JSON.stringify({port: self._port}),
+        headers = { "Content-Type": "application/json" };
+    page.open(url, 'post', data, headers, function(status){
+        page.close();
+        if (status != "success") {
+            phantom.exit();
+        }
     });
 };
 
@@ -58,7 +83,7 @@ Angel.prototype._onResourceReceived = function(response) {
 };
 
 
-Angel.prototype._open = function(url, callback) {
+Angel.prototype.open = function(url, callback) {
     var self = this;
     self._resources = {};
     self._orphanResources = [];
@@ -119,14 +144,20 @@ Angel.prototype._destroy = function(callback) {
 };
 
 
+Angel.prototype._ping = function(callback) {
+    window.setTimeout(function() {
+        callback(null);
+    }, 5000);
+};
+
+
 Angel.prototype._handleRequest = function(request, response) {
     var self = this;
-    var data = JSON.parse(request.post);
-    console.log(request.url + " -- " + JSON.stringify(data));
-    
+    var data = request.post !== "" ? JSON.parse(request.post) : {};
     var callback = function(data){
         response.statusCode = 200;
-        response.write(JSON.stringify(data));
+        data = data !== null ? JSON.stringify(data) : "";
+        response.write(data);
         response.close();
     };
 
@@ -150,6 +181,9 @@ Angel.prototype._handleRequest = function(request, response) {
         case "/destroy":
             self._destroy(callback);
             break;
+        case "/ping":
+            self._ping(callback);
+            break;
         default:
             console.log("WHAT DO YOU WANT?");
             response.statusCode = 500;
@@ -159,4 +193,7 @@ Angel.prototype._handleRequest = function(request, response) {
     } 
 };
 
-new Angel();
+
+if (phantom.args[0] !== undefined) {
+    new Angel();
+}
