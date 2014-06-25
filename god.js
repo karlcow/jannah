@@ -6,8 +6,9 @@ var acquire = require('acquire')
   , sugar = require('sugar')
   , winston = require('winston')
   , io = require('socket.io-client')
-  , util = require('util')
   , events = require('events')
+  , Server = require('socket.io')
+  , util = require('util')  
   , config = acquire('config')
   ;
 
@@ -28,62 +29,52 @@ var logger = new winston.Logger({
   ]
 });
 
-var Reign =  function(argv, done) {
+var God =  function(argv, done) {
   this.argv_ = argv;
   this.done_ = done;
   this.seraphim = {};
   this.god_ = null;
-  this.server_ = null;
   this.init();
 }
 
-util.inherits(Reign, events.EventEmitter);
+util.inherits(God, events.EventEmitter);
 
-Reign.prototype.init = function() {
+God.prototype.init = function() {
   var self = this;
-
-  self.god_ = io.connect(config.GOD_ADDRESS + '/channel', { port: config.GOD_CHANNEL, secure: true });
-  self.god_.on('connect', self.onConnection.bind(self));
-  self.god_.on('error', self.done_.bind(self));
-  self.god_.on('disconnect', self.onDisconnection.bind(self));
-  self.god_.on('stateChanged', self.onStateChanged.bind(self));
+  self.god_ = new Server();
+  self.god_.on('connection', self.onConnect.bind(self));
+  self.god_.on('connect_error', self.done_.bind(self));
+  self.god_.listen(3000);
 }
 
-Reign.prototype.onConnection = function() {
+God.prototype.onConnect = function(socket) {
   var self = this;
-  Console.log("OnConnection");
+  console.log("On Connect !! ");
+  console.log(socket);
+  console.log('\n\n'); 
 }
 
-Reign.prototype.onDisconnection = function() {
-  Console.log("Disconnection");
-}
-
-Reign.prototype.onStateChanged = function() {
-  Console.log("onStateChanged");
-}
-
-Reign.prototype.ping = function(argv) {
+God.prototype.disConnect = function(socket) {
   var self = this;
+  console.log("On DisConnect !! ");
+  console.log(socket);
+  console.log('\n\n');  
 }
 
-Reign.prototype.getInfo = function(argv) {
+God.prototype.newListener = function(socket) {
   var self = this;
+  console.log("On newListener !! ");
+  console.log(socket);
+  console.log('\n\n');
 }
 
-Reign.prototype.getSeraphim = function(argv) {
+God.prototype.removeListener = function(socket) {
   var self = this;
+  console.log("On removeListener !! ");
+  console.log(socket);
+  console.log('\n\n');
 }
 
-Reign.prototype.getState = function(argv) {
-  var self = this;
-}
-
-Reign.prototype.getVersion = function(argv) {
-  var self = this;
-}
-
-Reign.prototype.setState = function(argv) {
-}
 
 function usage() {
   console.log('Usage: node god.js [options]');
@@ -107,7 +98,7 @@ function done(err) {
 
 function main() {
   var args = process.argv.slice(4)
-    , longReign = null
+    , longGod = null
     ;
 
   setupSignals();
@@ -117,7 +108,7 @@ function main() {
     done();
   }
   else{
-    longReign = new Reign(args, done);
+    longGod = new God(args, done);
   }
   setTimeout(function() {}, 10000);
 }
