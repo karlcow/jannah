@@ -59,7 +59,7 @@ God.prototype.httpHandler = function (req, res) {
 God.prototype.onConnect = function(socket) {
   var self = this;
   console.log("On Connect.");
-  self.seraphim_[socket.id] = {"memoryUsed" : 0};
+  self.seraphim_[socket.id] = {"health" : {}};
   socket.on('disconnect', self.onDisconnect.bind(self, socket));
   socket.on('healthUpdate', self.onHealthUpdate.bind(self, socket));
   console.log('active seraphim ' + JSON.stringify(self.seraphim_));
@@ -70,6 +70,7 @@ God.prototype.onHealthUpdate = function(socket, health) {
   var self = this;
   console.log("On HealthUpdate !! " + socket.id + JSON.stringify(health));
   console.log('\n\n');
+  self.seraphim_[socket.id].health = health;
 }
 
 God.prototype.onDisconnect = function(socket) {
