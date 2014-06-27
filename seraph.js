@@ -17,7 +17,7 @@ var Summoner = module.exports = function(port, callback) {
     this.init(port, callback);
 };
 
-Summoner.prototype = new events.EventEmitter;
+Summoner.prototype = new events.EventEmitter();
 
 Summoner.prototype.init = function(port, callback) {
     var self = this;
@@ -43,6 +43,7 @@ Summoner.prototype._kill = function() {
     console.log("killing angel on port " + self.id);
     self._angel.kill();
     self.emit('exit');
+    reserverdPorts.splice(reserverdPorts.indexOf(self.id), 1);
 };
 
 

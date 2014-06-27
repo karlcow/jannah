@@ -1,4 +1,6 @@
 /* global require, module, window, phantom, slimer */
+/*jslint evil: true */
+
 var webpage = require("webpage"),
     webserver = require('webserver'),
     config = require('config');
@@ -8,6 +10,7 @@ var Angel = module.exports = function() {
     this._time = 0;
     this._resources = {};
     this._orphanResources = [];
+    this._tests = {};
     this.init();
 };
 
@@ -83,7 +86,7 @@ Angel.prototype._onResourceReceived = function(response) {
 };
 
 
-Angel.prototype.open = function(url, callback) {
+Angel.prototype._open = function(url, callback) {
     var self = this;
     self._resources = {};
     self._orphanResources = [];
@@ -151,6 +154,23 @@ Angel.prototype._ping = function(callback) {
 };
 
 
+Angel.prototype._addTest = function(name, script, callback) {
+    var self = this;
+    self._tests[name] = {script: script, result: null};
+    callback({success: true});
+};
+
+
+Angel.prototype._runTests = function(callback) {
+    'use strict';
+    var self = this;
+    for (var i in self._tests) {
+        self._tests[i].result = eval('(' + self._tests[i].script + ')');
+    }
+    callback({success: true, tests: self._tests});
+};
+
+
 Angel.prototype._handleRequest = function(request, response) {
     var self = this;
     var data = request.post !== "" ? JSON.parse(request.post) : {};
@@ -183,6 +203,12 @@ Angel.prototype._handleRequest = function(request, response) {
             break;
         case "/ping":
             self._ping(callback);
+            break;
+        case "/addTest":
+            self._addTest(data.name, data.script, callback);
+            break;
+        case "/runTests":
+            self._runTests(callback);
             break;
         default:
             console.log("WHAT DO YOU WANT?");

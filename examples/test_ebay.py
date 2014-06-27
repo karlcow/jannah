@@ -22,8 +22,8 @@ data = {'country': 'NL'}
 response = do_command("http://82.196.12.25:8421", "new", data)
 url = json.loads(response.text)["result"]
 """
-url = "http://127.0.0.1:8080"
 
+url = "http://127.0.0.1:55550"
 
 # Set Cookies
 cookie = {"domain": ".sweatytacobo.com",
@@ -54,7 +54,7 @@ resources = json.loads(response.text)["resources"]
 keys = sorted(resources.keys(), key=lambda x: int(x))
 print "\nThe Resources \n"
 for key in keys:
-    print key, resources[key]
+    print key, json.dumps(resources[key], sort_keys=True, indent=4, separators=(',', ': '))
 print ""
 
 
@@ -62,6 +62,12 @@ print ""
 response = do_command(url, "getScreenshot")
 #screenshot_url = json.loads(response.text)["result"]
 #print "\nThe Screenshot " + screenshot_url + "\n"
+
+data = {'name': 'resourcesLength', 'script': 'function () { return Object.keys(self._resources).length; }()'}
+#data = {'name': 'resourcesLength', 'script': 'return Object.keys(self._resources).length'}
+response = do_command(url, "addTest", data)
+
+response = do_command(url, "runTests")
 
 # Destroy Tab
 response = do_command(url, "destroy")

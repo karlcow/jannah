@@ -5,9 +5,9 @@ var acquire = require('acquire')
   , os = require('os')
   , sugar = require('sugar')
   , winston = require('winston')
-  , io = require('socket.io-client')  
-  , util = require('util')  
-  , events = require('events') 
+  , io = require('socket.io-client')
+  , util = require('util')
+  , events = require('events')
   , config = acquire('config')
   ;
 
@@ -46,7 +46,7 @@ Reign.prototype.init = function() {
   self.god_.on('connect', self.onConnection.bind(self));
   self.god_.on('error', self.done_.bind(self));
   self.god_.on('disconnect', self.onDisconnection.bind(self));
-  self.god_.on('stateChanged', self.onStateChanged.bind(self));  
+  self.god_.on('stateChanged', self.onStateChanged.bind(self));
 }
 
 Reign.prototype.onConnection = function() {
@@ -122,4 +122,4 @@ function main() {
   setTimeout(function() {}, 10000);
 }
 
-main(); 
+main();

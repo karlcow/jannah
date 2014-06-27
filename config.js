@@ -1,10 +1,10 @@
 /* global exports, process, require */
 /* jshint unused: false */
 
-var config = exports,
-    system,
-    env,
-    sugar;
+var config = exports
+  , system = null
+  , env    = null
+  , sugar  = null;
 
 try {
     system = require('system');
