@@ -2,13 +2,15 @@
  * God sees everything, knows everything, controls everything ...
  */
 var acquire = require('acquire')
+  , config = acquire('config')
+  , events = require('events') 
+  , fs = require('fs')  
+  , http = require('http')  
+  , io = require('socket.io')  
   , os = require('os')
   , sugar = require('sugar')
-  , winston = require('winston')
-  , io = require('socket.io-client')
-  , util = require('util')
-  , events = require('events')
-  , config = acquire('config')
+  , util = require('util')  
+  , winston = require('winston')   
   ;
 
 require('winston-papertrail').Papertrail;
@@ -28,61 +30,55 @@ var logger = new winston.Logger({
   ]
 });
 
-var Reign =  function(argv, done) {
+var God =  function(argv, done) {
   this.argv_ = argv;
   this.done_ = done;
-  this.seraphim = {};
-  this.god_ = null;
+  this.seraphim_ = {};
   this.server_ = null;
+  this.backChannel_ = null;
   this.init();
 }
 
-util.inherits(Reign, events.EventEmitter);
+util.inherits(God, events.EventEmitter);
 
-Reign.prototype.init = function() {
+God.prototype.init = function() {
   var self = this;
-
-  self.god_ = io.connect(config.GOD_ADDRESS + '/channel', { port: config.GOD_CHANNEL, secure: true });
-  self.god_.on('connect', self.onConnection.bind(self));
-  self.god_.on('error', self.done_.bind(self));
-  self.god_.on('disconnect', self.onDisconnection.bind(self));
-  self.god_.on('stateChanged', self.onStateChanged.bind(self));
+  self.server_ = http.createServer(self.httpHandler);
+  self.backChannel_ = new io();
+  self.backChannel_.on('connection', self.onConnect.bind(self));
+  //self.server_.listen(80);
+  self.backChannel_.listen(3000);
 }
 
-Reign.prototype.onConnection = function() {
+God.prototype.httpHandler = function (req, res) {
+  console.log('http handler');
+  res.writeHead(200);
+  res.end();
+}
+
+God.prototype.onConnect = function(socket) {
   var self = this;
-  Console.log("OnConnection");
+  console.log("On Connect.");
+  self.seraphim_[socket.id] = {"health" : {}};
+  socket.on('disconnect', self.onDisconnect.bind(self, socket));
+  socket.on('healthUpdate', self.onHealthUpdate.bind(self, socket));
+  console.log('active seraphim ' + JSON.stringify(self.seraphim_));
+  console.log('\n\n'); 
 }
 
-Reign.prototype.onDisconnection = function() {
-  Console.log("Disconnection");
-}
-
-Reign.prototype.onStateChanged = function() {
-  Console.log("onStateChanged");
-}
-
-Reign.prototype.ping = function(argv) {
+God.prototype.onHealthUpdate = function(socket, health) {
   var self = this;
+  console.log("On HealthUpdate !! " + socket.id + JSON.stringify(health));
+  console.log('\n\n');
+  self.seraphim_[socket.id].health = health;
 }
 
-Reign.prototype.getInfo = function(argv) {
+God.prototype.onDisconnect = function(socket) {
   var self = this;
-}
-
-Reign.prototype.getSeraphim = function(argv) {
-  var self = this;
-}
-
-Reign.prototype.getState = function(argv) {
-  var self = this;
-}
-
-Reign.prototype.getVersion = function(argv) {
-  var self = this;
-}
-
-Reign.prototype.setState = function(argv) {
+  console.log("On DisConnect !! " + socket.id);
+  self.seraphim_ = Object.reject(self.seraphim_, socket.id);
+  console.log('active seraphim ' + JSON.stringify(self.seraphim_));
+  console.log('\n\n');  
 }
 
 function usage() {
@@ -107,7 +103,7 @@ function done(err) {
 
 function main() {
   var args = process.argv.slice(4)
-    , longReign = null
+    , longGod = null
     ;
 
   setupSignals();
@@ -117,7 +113,7 @@ function main() {
     done();
   }
   else{
-    longReign = new Reign(args, done);
+    longGod = new God(args, done);
   }
   setTimeout(function() {}, 10000);
 }
