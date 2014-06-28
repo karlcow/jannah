@@ -46,24 +46,52 @@ God.prototype.init = function() {
   self.server_ = http.createServer(self.httpHandler);
   self.backChannel_ = new io();
   self.backChannel_.on('connection', self.onConnect.bind(self));
-  //self.server_.listen(80);
-  self.backChannel_.listen(3000);
+  self.backChannel_.listen(config.GOD_BACK_CHANNEL_PORT);
 }
 
 God.prototype.httpHandler = function (req, res) {
   console.log('http handler');
-  res.writeHead(200);
-  res.end();
+  var self = this;
+  var url = req.url;
+  var data = req.body;    
+  var callback = function(data){
+    res.statusCode = 200;
+    res.write(JSON.stringify(data));
+    res.end();
+  }
+  
+  switch (url) {
+    case "/new":
+      var seraph = self.delegate();
+      if(!seraph)
+        return callback(Object.merge({"status" : "There doesn't seem to be any Seraph available "}, self.seraphim_));
+      res.redirect(302, "http://%s:%i/new" % (seraph.ip, config.SEPHARM_PORT));
+      break;
+    case "/status":
+      self._new(callback);
+      break;
+    default:
+      break;
+  }
 }
 
+God.prototype.delegate = function(){
+  var self = this;
+  var choosenOne = null;
+  Object.keys(self.seraphim_).forEach(function(seraph){
+    //TODO here we check the health and the active angels per seraph
+    //for now just return the first one
+    choosenOne = seraph;
+  });
+  return choosenOne;
+}
+
+//God.prototype.
 God.prototype.onConnect = function(socket) {
   var self = this;
-  console.log("On Connect.");
-  self.seraphim_[socket.id] = {"status" : {}};
+  self.seraphim_[socket.id] = {};
   socket.on('disconnect', self.onDisconnect.bind(self, socket));
   socket.on('seraphUpdate', self.onSeraphUpdate.bind(self, socket));
-  console.log('active seraphim ' + JSON.stringify(self.seraphim_));
-  console.log('\n\n'); 
 }
 
 God.prototype.onSeraphUpdate = function(socket, status) {
@@ -75,7 +103,6 @@ God.prototype.onSeraphUpdate = function(socket, status) {
 
 God.prototype.onDisconnect = function(socket) {
   var self = this;
-  console.log("On DisConnect !! " + socket.id);
   self.seraphim_ = Object.reject(self.seraphim_, socket.id);
   console.log('active seraphim ' + JSON.stringify(self.seraphim_));
   console.log('\n\n');  
