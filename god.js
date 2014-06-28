@@ -59,18 +59,18 @@ God.prototype.httpHandler = function (req, res) {
 God.prototype.onConnect = function(socket) {
   var self = this;
   console.log("On Connect.");
-  self.seraphim_[socket.id] = {"health" : {}};
+  self.seraphim_[socket.id] = {"status" : {}};
   socket.on('disconnect', self.onDisconnect.bind(self, socket));
-  socket.on('healthUpdate', self.onHealthUpdate.bind(self, socket));
+  socket.on('seraphUpdate', self.onSeraphUpdate.bind(self, socket));
   console.log('active seraphim ' + JSON.stringify(self.seraphim_));
   console.log('\n\n'); 
 }
 
-God.prototype.onHealthUpdate = function(socket, health) {
+God.prototype.onSeraphUpdate = function(socket, status) {
   var self = this;
-  console.log("On HealthUpdate !! " + socket.id + JSON.stringify(health));
+  console.log("On StatusUpdate !! " + socket.id + JSON.stringify(status));
   console.log('\n\n');
-  self.seraphim_[socket.id].health = health;
+  self.seraphim_[socket.id] = status;
 }
 
 God.prototype.onDisconnect = function(socket) {

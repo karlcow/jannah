@@ -128,16 +128,17 @@ Seraph.prototype.talkToGod = function(){
   self.backChannel = io.connect('http://localhost:3000', socketOptions);
 
   self.backChannel.on('connect_error', function(err){
-    console.log('BackChannel Error received : ' + err)});
+    console.log('BackChannel Error received : ' + err);
+  });
 
   self.backChannel.on('connect', function(){
     console.log('BackChannel open and ready for use');
     // Every minute send an health update to God. 
-    var minutes = 1, the_interval = minutes * 60 * 1000;
+    var tenSeconds = 10 * 1000;
     setInterval(function() {
-      self.backChannel.emit('health', self.health), 3000}, the_interval);
+              self.backChannel.emit('seraphUpdate', {health: self.health, activeAngels: Object.size(self._angels)})},
+              tenSeconds);
   });
-
 }
 
 Seraph.prototype._new = function(callback) {
