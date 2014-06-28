@@ -20,6 +20,7 @@
     "compression": "*",
     "body-parser": "*",
     "method-override": "*",
+    "os-monitor": "*",
     "connect": "*"
   },
   "engines": {

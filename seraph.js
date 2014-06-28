@@ -12,11 +12,11 @@ var acquire = require('acquire')
   , reserverdPorts = []
   , Seq = require('seq')
   , spawn = require('child_process').spawn
-  , sugar = require('sugar')
+  //, sugar = require('sugar')
   , timers = require('timers')
-  , util = require('util')  
+  //, util = require('util')  
   , utilities = acquire('utilities')
-  , winston = require('winston')
+  //, winston = require('winston')
   , osm = require("os-monitor")
   ;
 
@@ -44,7 +44,7 @@ Summoner.prototype.init = function(port, callback) {
   self._angel.stderr.on('data', function (data) {
     console.log('stderr: ' + data);
   });
-}
+};
 
 Summoner.prototype._kill = function() {
   var self = this;
@@ -90,7 +90,7 @@ var Seraph = module.exports = function() {
   this.health = {};
   this.init();
   this.ip = "";
-}
+};
 
 Seraph.prototype.init = function() {
   var self = this;    
@@ -107,8 +107,9 @@ Seraph.prototype.init = function() {
   app.listen(config.SEPHARM_PORT);
 
   self.openBackChannel(function(err){
-    if(err)
+    if(err) {
       console.log(err);
+    }
   });
 };
 
@@ -132,7 +133,7 @@ Seraph.prototype.openBackChannel = function(done){
       done(err);
     })
     ;
-}
+};
 
 Seraph.prototype.monitorHealth = function(done){
   var self = this;
@@ -141,12 +142,12 @@ Seraph.prototype.monitorHealth = function(done){
     self.health = Object.reject(event, "type");
   });
   done();
-}
+};
 
 Seraph.prototype.talkToGod = function(done){
   var self = this;
   // Establish the back channel to God !
-  socketOptions = {
+  var socketOptions = {
     transports : ['websocket']
   };
 
@@ -163,14 +164,14 @@ Seraph.prototype.talkToGod = function(done){
     var tenSeconds = 10 * 1000;
     setInterval(self.sendUpdateToGod.bind(self), tenSeconds);
   });
-}
+};
 
 Seraph.prototype.sendUpdateToGod = function(){
   var self = this;
   self.backChannel.emit('seraphUpdate', {health : self.health,
                                          ip : self.ip,
                                          activeAngels : Object.size(self._angels)});
-}
+};
 
 Seraph.prototype._new = function(callback) {
   var self = this;
@@ -185,7 +186,7 @@ Seraph.prototype._new = function(callback) {
     });
   }; 
   utilities.getFreePort(reserverdPorts, func);
-}
+};
 
 Seraph.prototype._announceAngel = function(data, callback) {
   var self = this;
@@ -227,6 +228,6 @@ Seraph.prototype.getNetworkIP = function (callback) {
   socket.on('error', function(e) {
     callback(e, 'error');
   });
-}
+};
 
 new Seraph();

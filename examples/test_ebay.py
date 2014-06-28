@@ -17,13 +17,10 @@ def do_command(url, command, data={}):
     return response
 
 # Get a tab from the Netherlands
-"""
-data = {'country': 'NL'}
-response = do_command("http://82.196.12.25:8421", "new", data)
-url = json.loads(response.text)["result"]
-"""
 
-url = "http://127.0.0.1:55550"
+data = {'country': 'NL'}
+response = do_command("http://127.0.0.1:8421", "new", data)
+url = json.loads(response.text)["url"]
 
 # Set Cookies
 cookie = {"domain": ".sweatytacobo.com",
