@@ -8,7 +8,9 @@ var acquire = require('acquire')
   , http = require('http')
   , io = require('socket.io-client')
   , methodOverride = require('method-override')
+  , net = require('net')
   , reserverdPorts = []
+  , Seq = require('seq')
   , spawn = require('child_process').spawn
   , sugar = require('sugar')
   , timers = require('timers')
@@ -42,7 +44,7 @@ Summoner.prototype.init = function(port, callback) {
   self._angel.stderr.on('data', function (data) {
     console.log('stderr: ' + data);
   });
-};
+}
 
 Summoner.prototype._kill = function() {
   var self = this;
@@ -82,22 +84,16 @@ Summoner.prototype._monitor = function() {
 
 /*---------------------------------------------*/
 // todo plug in winston
-
 var Seraph = module.exports = function() {
   this._angels = {};
   this.backChannel = null;
   this.health = {};
   this.init();
-};
+  this.ip = "";
+}
 
 Seraph.prototype.init = function() {
   var self = this;    
-
-  self.monitorHealth();
-  osm.start();
-  
-  self.talkToGod();
-
   var app = express();
   app.use(compression());
   app.use(bodyParser());
@@ -109,35 +105,71 @@ Seraph.prototype.init = function() {
   });
   
   app.listen(config.SEPHARM_PORT);
+
+  self.openBackChannel(function(err){
+    if(err)
+      console.log(err);
+  });
 };
 
-Seraph.prototype.monitorHealth = function(){
-  var self = this;    
-  osm.on('monitor', function(event) {
-    self.health = Object.reject(event, "type");
-  });  
+Seraph.prototype.openBackChannel = function(done){
+  var self = this;
+  Seq()
+    .seq(function(){
+      self.getNetworkIP(this);
+    })
+    .seq(function(ip){
+      self.ip = ip;
+      self.monitorHealth(this);
+    })
+    .seq(function(){
+      self.talkToGod(this);
+    })
+    .seq(function(){
+      console.log("Seraph up and going");
+    })
+    .catch(function(err){
+      done(err);
+    })
+    ;
 }
 
-Seraph.prototype.talkToGod = function(){
+Seraph.prototype.monitorHealth = function(done){
+  var self = this;
+  osm.start();    
+  osm.on('monitor', function(event) {
+    self.health = Object.reject(event, "type");
+  });
+  done();
+}
+
+Seraph.prototype.talkToGod = function(done){
   var self = this;
   // Establish the back channel to God !
   socketOptions = {
     transports : ['websocket']
   };
 
-  self.backChannel = io.connect('http://localhost:3000', socketOptions);
+  self.backChannel = io.connect(config.GOD_ADDRESS + ':' + config.GOD_BACK_CHANNEL_PORT, socketOptions);
 
   self.backChannel.on('connect_error', function(err){
-    console.log('BackChannel Error received : ' + err)});
+    console.log('BackChannel Error received : ' + err);
+    done(err);
+  });
 
   self.backChannel.on('connect', function(){
     console.log('BackChannel open and ready for use');
     // Every minute send an health update to God. 
-    var minutes = 1, the_interval = minutes * 60 * 1000;
-    setInterval(function() {
-      self.backChannel.emit('health', self.health), 3000}, the_interval);
+    var tenSeconds = 10 * 1000;
+    setInterval(self.sendUpdateToGod.bind(self), tenSeconds);
   });
+}
 
+Seraph.prototype.sendUpdateToGod = function(){
+  var self = this;
+  self.backChannel.emit('seraphUpdate', {health : self.health,
+                                         ip : self.ip,
+                                         activeAngels : Object.size(self._angels)});
 }
 
 Seraph.prototype._new = function(callback) {
@@ -151,10 +183,9 @@ Seraph.prototype._new = function(callback) {
       console.log("Purging :" + port);
       delete self._angels[port];
     });
-  };
-    
+  }; 
   utilities.getFreePort(reserverdPorts, func);
-};
+}
 
 Seraph.prototype._announceAngel = function(data, callback) {
   var self = this;
@@ -186,5 +217,16 @@ Seraph.prototype._handleRequest = function (req, res) {
       break;
   }
 };
+
+Seraph.prototype.getNetworkIP = function (callback) {
+  var socket = net.createConnection(80, 'www.google.com');
+  socket.on('connect', function() {
+    callback(null, socket.address().address);
+    socket.end();
+  });
+  socket.on('error', function(e) {
+    callback(e, 'error');
+  });
+}
 
 new Seraph();
