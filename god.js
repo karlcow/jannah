@@ -12,11 +12,109 @@ var acquire = require('acquire')
   , util = require('util')  
   ;
 
-function setupSignals() {
-  process.on('SIGINT', function() {
+var God =  function (argv, done) {
+  this.argv_ = argv;
+  this.done_ = done;
+  this._seraphim = {};
+  this._server = null;
+  this._backChannel = null;
+  this.init();
+};
+
+God.prototype = new events.EventEmitter();
+
+God.prototype.init = function () {
+  var self = this;
+  self._server = http.createServer(self._handleRequest);
+  self._backChannel = new io();
+  self._backChannel.on('connection', self._onConnect.bind(self));
+  self._backChannel.listen(config.GOD_BACK_CHANNEL_PORT);
+};
+
+God.prototype._handleRequest = function (req, res) {
+  console.log('http handler');
+  var self = this;
+  var url = req.url;
+  var callback = function (data){
+    res.statusCode = 200;
+    res.write(JSON.stringify(data));
+    res.end();
+  };
+  
+  switch (url) {
+    case "/new":
+      var seraph = self._delegate();
+      if(!seraph) {
+        return callback(Object.merge({"status" : "There doesn't seem to be any Seraph available "}, self._seraphim));
+      }
+      res.redirect(302, "http://%s:%i/new" % (seraph.ip, config.SEPHARM_PORT));
+      break;
+    default:
+      break;
+  }
+};
+
+God.prototype._delegate = function (){
+  var self = this;
+  var choosenOne = null;
+  Object.keys(self._seraphim).forEach(function (seraph){
+    //TODO here we check the health and the active angels per seraph
+    //for now just return the first one
+    choosenOne = seraph;
+  });
+  return choosenOne;
+};
+
+//God.prototype.
+God.prototype._onConnect = function (socket) {
+  var self = this;
+  self._seraphim[socket.id] = {};
+  socket.on('disconnect', self._onDisconnect.bind(self, socket));
+  socket.on('seraphUpdate', self._onSeraphUpdate.bind(self, socket));
+};
+
+God.prototype._onSeraphUpdate = function (socket, status) {
+  var self = this;
+  console.log("On StatusUpdate !! " + socket.id + JSON.stringify(status));
+  console.log('\n\n');
+  self._seraphim[socket.id] = status;
+};
+
+God.prototype._onDisconnect = function (socket) {
+  var self = this;
+  self._seraphim = Object.reject(self._seraphim, socket.id);
+  console.log('active seraphim ' + JSON.stringify(self._seraphim));
+  console.log('\n\n');  
+};
+
+function main() {
+  var args = process.argv.slice(4);
+
+  process.on('SIGINT', function () {
     process.exit(1);
   });
+
+  var done = function (err) {
+    if (err) {
+      console.warn(err);
+      console.trace();
+    }
+    process.exit(err ? 1 : 0);
+  };
+    
+  if (args === 'help' ) {
+    console.log('Usage: node god.js [options]\nOptions:\n');
+    console.log('\tgod state', '\tGets the state of God.');
+    console.log('\tgod version', '\tGets the version of God\n');
+    done();
+  }
+  else{
+    new God(args, done);
+  }
 }
+
+main();
+
 
 /*
 require('winston-papertrail').Papertrail;
@@ -29,115 +127,3 @@ var logger = new winston.Logger({
   ]
 });
 */
-
-var God =  function(argv, done) {
-  this.argv_ = argv;
-  this.done_ = done;
-  this.seraphim_ = {};
-  this.server_ = null;
-  this.backChannel_ = null;
-  this.init();
-};
-
-util.inherits(God, events.EventEmitter);
-
-God.prototype.init = function() {
-  var self = this;
-  self.server_ = http.createServer(self.httpHandler);
-  self.backChannel_ = new io();
-  self.backChannel_.on('connection', self.onConnect.bind(self));
-  self.backChannel_.listen(config.GOD_BACK_CHANNEL_PORT);
-};
-
-God.prototype.httpHandler = function (req, res) {
-  console.log('http handler');
-  var self = this;
-  var url = req.url;
-  var callback = function(data){
-    res.statusCode = 200;
-    res.write(JSON.stringify(data));
-    res.end();
-  };
-  
-  switch (url) {
-    case "/new":
-      var seraph = self.delegate();
-      if(!seraph) {
-        return callback(Object.merge({"status" : "There doesn't seem to be any Seraph available "}, self.seraphim_));
-      }
-      res.redirect(302, "http://%s:%i/new" % (seraph.ip, config.SEPHARM_PORT));
-      break;
-    case "/status":
-      self._new(callback);
-      break;
-    default:
-      break;
-  }
-};
-
-God.prototype.delegate = function(){
-  var self = this;
-  var choosenOne = null;
-  Object.keys(self.seraphim_).forEach(function(seraph){
-    //TODO here we check the health and the active angels per seraph
-    //for now just return the first one
-    choosenOne = seraph;
-  });
-  return choosenOne;
-};
-
-//God.prototype.
-God.prototype.onConnect = function(socket) {
-  var self = this;
-  self.seraphim_[socket.id] = {};
-  socket.on('disconnect', self.onDisconnect.bind(self, socket));
-  socket.on('seraphUpdate', self.onSeraphUpdate.bind(self, socket));
-};
-
-God.prototype.onSeraphUpdate = function(socket, status) {
-  var self = this;
-  console.log("On StatusUpdate !! " + socket.id + JSON.stringify(status));
-  console.log('\n\n');
-  self.seraphim_[socket.id] = status;
-};
-
-God.prototype.onDisconnect = function(socket) {
-  var self = this;
-  self.seraphim_ = Object.reject(self.seraphim_, socket.id);
-  console.log('active seraphim ' + JSON.stringify(self.seraphim_));
-  console.log('\n\n');  
-};
-
-function usage() {
-  console.log('Usage: node god.js [options]\n');
-  console.log('Options:\n');
-  console.log('\tgod state', '\tGets the state of God.');
-  console.log('\tgod version', '\tGets the version of God\n');
-}
-
-function done(err) {
-  if (err) {
-    console.warn(err);
-    console.trace();
-  }
-  process.exit(err ? 1 : 0);
-}
-
-function main() {
-  var args = process.argv.slice(4)
-    , longGod = null
-    ;
-
-  setupSignals();
-
-  if (args === 'help' ) {
-    usage();
-    done();
-  }
-  else{
-    longGod = new God(args, done);
-  }
-  setTimeout(function() {}, 10000);
-}
-
-main();
