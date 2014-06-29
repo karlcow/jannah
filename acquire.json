@@ -1,4 +1,4 @@
 {
-    "config": "config.js",
-    "utilities": "utilities.js"
+  "config": "config.js",
+  "utilities": "utilities.js"
 }
