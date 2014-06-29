@@ -11,18 +11,24 @@ var Angel = module.exports = function() {
     this._resources = {};
     this._orphanResources = [];
     this._tests = {};
+    this._lastcall = 0;
+    this._autoDestructId = null;
     this.init();
 };
 
 
 Angel.prototype.init = function() {
     var self = this;
+    self.lastcall = Date.now();
     self._port = parseInt(phantom.args[0]);
     self._page = webpage.create();
     self._server = webserver.create();
     self._page.viewportSize = { width: 1280, height: 800 };
+    self._page.settings.resourceTimeout = 60000;
     self._page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
     self._page.onResourceReceived = function(response) {self._onResourceReceived(response);};
+    self._page.onResourceTimeout = function(request) {self._onResourceTimeout(request);};
+    self._page.onResourceError = function(resourceError) {self._onResourceError(resourceError);};
     try {
         self._server.listen(self._port,
                             function (request, response) { 
@@ -34,6 +40,7 @@ Angel.prototype.init = function() {
         phantom.exit();
     }
     console.log("Starting Angel on port: " + self._port);
+    self.resetAutoDestruct();
 };
 
 
@@ -82,7 +89,22 @@ Angel.prototype._onResourceReceived = function(response) {
     }
     self._resources[response.id].response = response;
     console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
-    self._resources[response.id].response = response;
+};
+
+
+Angel.prototype._onResourceError = function(request) {
+    var self = this;
+    self._orphanResources.splice(self._orphanResources.indexOf(request.id), 1);
+    self._resources[request.id].request = request;
+    console.log('Request (#' + request.id + ', timed out: "' + JSON.stringify(self._resources[request.id]));
+};
+
+
+Angel.prototype._onResourceTimeout = function(resourceError) {
+    var self = this;
+    self._orphanResources.splice(self._orphanResources.indexOf(resourceError.id), 1);
+    self._resources[resourceError.id].response = resourceError;
+    console.log('Request (#' + resourceError.id + ' had error: "' + JSON.stringify(self._resources[resourceError.id]));
 };
 
 
@@ -171,6 +193,14 @@ Angel.prototype._runTests = function(callback) {
 };
 
 
+Angel.prototype.resetAutoDestruct = function () {
+    var self = this;
+    console.log("Resetting auto Destruct");
+    window.clearTimeout(self._autoDestructId);
+    self._autoDestructId = window.setTimeout(phantom.exit, 120000);
+};
+
+
 Angel.prototype._handleRequest = function(request, response) {
     var self = this;
     var data = request.post !== "" ? JSON.parse(request.post) : {};
@@ -183,19 +213,24 @@ Angel.prototype._handleRequest = function(request, response) {
 
     switch(request.url) {
         case "/open":
+            self.resetAutoDestruct();
             self._open(data.url, callback);
             break;
         case "/addCookie":
+            self.resetAutoDestruct();
             self._addCookie(data.name, data.value, data.domain, data.path,
                            data.httponly, data.secure, data.expires, callback);
             break; 
         case "/setUserAgent":
+            self.resetAutoDestruct();
             self._setUserAgent(data.userAgent, callback);
             break;
         case "/getResources":
+            self.resetAutoDestruct();
             self._getResources(callback);
             break;
         case "/getScreenshot":
+            self.resetAutoDestruct();
             self._getScreenshot(callback);
             break;
         case "/destroy":
@@ -205,9 +240,11 @@ Angel.prototype._handleRequest = function(request, response) {
             self._ping(callback);
             break;
         case "/addTest":
+            self.resetAutoDestruct();
             self._addTest(data.name, data.script, callback);
             break;
         case "/runTests":
+            self.resetAutoDestruct();
             self._runTests(callback);
             break;
         default:
@@ -216,7 +253,7 @@ Angel.prototype._handleRequest = function(request, response) {
             response.write("");
             response.close();
             return;
-    } 
+    }
 };
 
 

@@ -1,11 +1,11 @@
 /* global require, module */
 /* exported getFreePort */
-var acquire = require('acquire'),
-    config = acquire('config'),
-    net = require('net');
+var acquire = require('acquire')
+    , config = acquire('config')
+    , net = require('net')
+    ;
 
 var Utilities = module.exports;
-
 Utilities.getFreePort = function (reservedPorts, callback) {
     var i = -1;
     
@@ -31,6 +31,5 @@ Utilities.getFreePort = function (reservedPorts, callback) {
             _isPortFree(config.ANGEL_PORTS[i], findFreePort);
         }
     };
-    
     findFreePort(false);
 };
