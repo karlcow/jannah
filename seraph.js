@@ -7,7 +7,6 @@ var acquire = require('acquire')
   , express = require('express')   
   , http = require('http')
   , io = require('socket.io-client')
-  , methodOverride = require('method-override')
   , net = require('net')
   , reserverdPorts = []
   , Seq = require('seq')
@@ -88,8 +87,7 @@ Seraph.prototype.init = function() {
   var self = this;    
   var app = express();
   app.use(compression());
-  app.use(bodyParser());
-  app.use(methodOverride());
+  app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({extended: true}));
   app.all('*', function(req, res) { self._handleRequest(req, res); });
   app.listen(config.SEPHARM_PORT);

@@ -4,8 +4,15 @@
   "description": "Headless web biatch",
   "dependencies": {
     "acquire": "git://github.com/njpatel/acquire.git",
+    "body-parser": "*",
+    "compression": "*",
+    "connect": "*",
     "enum": "0.2.x",
+    "express": "latest",
+    "method-override": "*",
     "node-promise": "0.5.x",
+    "os-monitor": "*",
+    "portscanner": "*",
     "request": "2.x.x",
     "rimraf": "2.1.x",
     "seq": "0.3.x",
@@ -14,14 +21,7 @@
     "sugar": "1.x.x",
     "URIjs": "1.x.x",
     "winston": "0.x.x",
-    "winston-papertrail": "*",
-    "portscanner": "*",
-    "express": "latest",
-    "compression": "*",
-    "body-parser": "*",
-    "method-override": "*",
-    "os-monitor": "*",
-    "connect": "*"
+    "winston-papertrail": "*"
   },
   "engines": {
     "node": "0.10.x",
