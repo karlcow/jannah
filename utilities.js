@@ -6,12 +6,12 @@ var acquire = require('acquire')
     ;
 
 var Utilities = module.exports;
-Utilities.getFreePort = function (reservedPorts, callback) {
+Utilities.getFreePort = function(reservedPorts, callback) {
     var i = -1;
     
     var availablePorts = [];
-    for (var p in config.ANGEL_PORTS){
-        if (reservedPorts.indexOf(config.ANGEL_PORTS[p]) == -1) {
+    for (var p in config.ANGEL_PORTS) {
+        if (reservedPorts.indexOf(config.ANGEL_PORTS[p]) === -1) {
             availablePorts.push(config.ANGEL_PORTS[p]);
         }
     }
