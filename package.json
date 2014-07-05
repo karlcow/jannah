@@ -19,7 +19,9 @@
     "socket.io": "1.0.*",
     "socket.io-client": "1.0.*",
     "sugar": "1.x.x",
+    "underscore": "*",
     "URIjs": "1.x.x",
+    "whatismyip": "0.x.x",
     "winston": "0.x.x",
     "winston-papertrail": "*"
   },
