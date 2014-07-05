@@ -47,7 +47,7 @@ Angel.prototype._announceAngel = function() {
   var self = this;
   var page = webpage.create();
   //window.close();
-  var url = 'http://localhost:' + config.SEPHARM_PORT  + '/announceAngel',
+  var url = 'http://localhost:' + config.SERAPH_PORT  + '/announceAngel',
     data = JSON.stringify({port: self._port}),
     headers = { "Content-Type": "application/json" };
   page.open(url, 'post', data, headers, function(status) {

@@ -51,7 +51,7 @@ Summoner.prototype._kill = function() {
 
 Summoner.prototype.release = function() {
   var self = this;
-  self._callback({url: "http://" + config.SEPHARM_ADDRESS + ":" + this.id});
+  self._callback({url: "http://" + config.SERAPH_ADDRESS + ":" + this.id});
   self._monitor();
 };
 
@@ -65,7 +65,7 @@ Summoner.prototype._monitor = function() {
   var self = this;
   timers.clearTimeout(self._noSpawnTimer);
   console.log("Angel: " + self.id + " is alive.");
-  var uri = "http://" + config.SEPHARM_ADDRESS + ":" + self.id + "/ping";
+  var uri = "http://" + config.SERAPH_ADDRESS + ":" + self.id + "/ping";
   console.log(uri);
   var request = http.get(uri, function() { self._monitor(); })
   .on('error', function() { self._kill(); });
@@ -90,7 +90,7 @@ Seraph.prototype.init = function() {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({extended: true}));
   app.all('*', function(req, res) { self._handleRequest(req, res); });
-  app.listen(config.SEPHARM_PORT);
+  app.listen(config.SERAPH_PORT);
 
   self.openBackChannel(function(err) { if (err) console.log(err); });
 };
@@ -99,7 +99,7 @@ Seraph.prototype.openBackChannel = function(done) {
   var self = this;
   Seq()
     .seq(function() {
-      self._getNetworkIP(this);
+      utilities.getNetworkIP(this);
     })
     .seq(function(ip) {
       self.ip = ip;
@@ -133,7 +133,7 @@ Seraph.prototype.talkToGod = function(done) {
     transports : ['websocket']
   };
 
-  self.backChannel = io.connect(config.GOD_ADDRESS + ':' + config.GOD_BACK_CHANNEL_PORT, socketOptions);
+  self.backChannel = io.connect('http://' + config.GOD_ADDRESS + ':' + config.GOD_BACK_CHANNEL_PORT, socketOptions);
 
   self.backChannel.on('connect_error', function(err) {
     console.log('BackChannel Error received : ' + err);
@@ -181,6 +181,7 @@ Seraph.prototype._announceAngel = function(data, callback) {
 Seraph.prototype._handleRequest = function(req, res) {
   var self = this;
   var url = req.url;
+  console.log(url);
   var data = req.body;    
   var callback = function(data) {
     res.statusCode = 200;
@@ -199,17 +200,6 @@ Seraph.prototype._handleRequest = function(req, res) {
     default:
       break;
   }
-};
-
-Seraph.prototype._getNetworkIP = function(callback) {
-  var socket = net.createConnection(80, 'www.google.com');
-  socket.on('connect', function() {
-    callback(null, socket.address().address);
-    socket.end();
-  });
-  socket.on('error', function(e) {
-    callback(e, 'error');
-  });
 };
 
 new Seraph();
