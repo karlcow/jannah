@@ -49,3 +49,7 @@ Utilities.getNetworkIP = function(callback) {
     }
   });
 };
+
+Utilities.getMaxAngels = function(callback) {
+  return config.ANGEL_PORT_COUNT;
+};

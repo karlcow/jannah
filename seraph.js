@@ -77,10 +77,10 @@ Summoner.prototype._monitor = function() {
 // todo plug in winston
 var Seraph = module.exports = function() {
   this._angels = {};
-  this.backChannel = null;
-  this.health = {};
+  this._backChannel = null;
+  this._health = {};
   this.init();
-  this.ip = "";
+  this._ip = "";
 };
 
 Seraph.prototype.init = function() {
@@ -92,21 +92,21 @@ Seraph.prototype.init = function() {
   app.all('*', function(req, res) { self._handleRequest(req, res); });
   app.listen(config.SERAPH_PORT);
 
-  self.openBackChannel(function(err) { if (err) console.log(err); });
+  self._openBackChannel(function(err) { if (err) console.log(err); });
 };
 
-Seraph.prototype.openBackChannel = function(done) {
+Seraph.prototype._openBackChannel = function(done) {
   var self = this;
   Seq()
     .seq(function() {
       utilities.getNetworkIP(this);
     })
     .seq(function(ip) {
-      self.ip = ip;
-      self.monitorHealth(this);
+      self._ip = ip;
+      self._monitorHealth(this);
     })
     .seq(function() {
-      self.talkToGod(this);
+      self._talkToGod(this);
     })
     .seq(function() {
       console.log("Seraph up and going");
@@ -117,30 +117,30 @@ Seraph.prototype.openBackChannel = function(done) {
     ;
 };
 
-Seraph.prototype.monitorHealth = function(done) {
+Seraph.prototype._monitorHealth = function(done) {
   var self = this;
   osm.start();    
   osm.on('monitor', function(event) {
-    self.health = Object.reject(event, "type");
+    self._health = Object.reject(event, "type");
   });
   done();
 };
 
-Seraph.prototype.talkToGod = function(done) {
+Seraph.prototype._talkToGod = function(done) {
   var self = this;
   // Establish the back channel to God !
   var socketOptions = {
     transports : ['websocket']
   };
 
-  self.backChannel = io.connect('http://' + config.GOD_ADDRESS + ':' + config.GOD_BACK_CHANNEL_PORT, socketOptions);
+  self._backChannel = io.connect('http://' + config.GOD_ADDRESS + ':' + config.GOD_BACK_CHANNEL_PORT, socketOptions);
 
-  self.backChannel.on('connect_error', function(err) {
+  self._backChannel.on('connect_error', function(err) {
     console.log('BackChannel Error received : ' + err);
     done(err);
   });
 
-  self.backChannel.on('connect', function() {
+  self._backChannel.on('connect', function() {
     console.log('BackChannel open and ready for use');
     // Every minute send an health update to God. 
     var tenSeconds = 10 * 1000;
@@ -150,9 +150,11 @@ Seraph.prototype.talkToGod = function(done) {
 
 Seraph.prototype._sendUpdateToGod = function() {
   var self = this;
-  self.backChannel.emit('seraphUpdate', {health : self.health,
-                                         ip : self.ip,
-                                         activeAngels : Object.size(self._angels)});
+  self._backChannel.emit('seraphUpdate', {health : self._health,
+                                         ip : self._ip,
+                                         activeAngels : Object.size(self._angels),
+                                         maxAngels: utilities.getMaxAngels()
+                                        });
 };
 
 Seraph.prototype._new = function(callback) {
