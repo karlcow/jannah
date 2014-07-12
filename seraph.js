@@ -8,14 +8,12 @@ var acquire = require('acquire')
   , http = require('http')
   , io = require('socket.io-client')
   , net = require('net')
-  , reserverdPorts = []
   , Seq = require('seq')
   , spawn = require('child_process').spawn
-  //, sugar = require('sugar')
-  , timers = require('timers')
-  //, util = require('util')  
+  , sugar = require('sugar')
+  , timers = require('timers') 
   , utilities = acquire('utilities')
-  //, winston = require('winston')
+  , winston = require('winston')
   , osm = require("os-monitor")
   ;
 
@@ -30,7 +28,6 @@ Summoner.prototype = new events.EventEmitter();
 Summoner.prototype.init = function(port, callback) {
   var self = this;
   self._summonVerified = false;
-  reserverdPorts.push(port);
   self.id = port; 
   self._callback = callback;
   self._angel = null;
@@ -46,7 +43,6 @@ Summoner.prototype._kill = function() {
   console.log("killing angel on port " + self.id);
   self._angel.kill();
   self.emit('exit');
-  reserverdPorts.splice(reserverdPorts.indexOf(self.id), 1);
 };
 
 Summoner.prototype.release = function() {
@@ -81,6 +77,8 @@ var Seraph = module.exports = function() {
   this._health = {};
   this.init();
   this._ip = "";
+  this.maxAngels = 0;
+  this.reserverdPorts = [];  
 };
 
 Seraph.prototype.init = function() {
@@ -94,6 +92,16 @@ Seraph.prototype.init = function() {
 
   self._openBackChannel(function(err) { if (err) console.log(err); });
 };
+
+Seraph.prototype.exit = function(err){
+  var self = this;
+  if(err)
+    console.warn('Seraph is going down because of an error ' + err);
+  else
+    console.log('Seraph exited cleanly ...');
+
+  self._backChannel.emit('disconnect', err);
+}
 
 Seraph.prototype._openBackChannel = function(done) {
   var self = this;
@@ -109,7 +117,12 @@ Seraph.prototype._openBackChannel = function(done) {
       self._talkToGod(this);
     })
     .seq(function() {
-      console.log("Seraph up and going");
+      var seraph = require(config.SERAPH_CONFIG_PATH);
+      self.maxAngels = seraph.maxAngels;
+      this();
+    })
+    .seq(function(){
+      console.log("Seraph up and going");      
     })
     .catch(function(err) {
       done(err);
@@ -163,13 +176,19 @@ Seraph.prototype._new = function(callback) {
     if (port === null)
       return callback({url: null});
 
+    self.reserverdPorts.push(port);
     self._angels[port] = new Summoner(port, callback);
     self._angels[port].on('exit', function() {
       console.log("Purging :" + port);
       delete self._angels[port];
+      // fire off a new update on an exit.
+      self.reserverdPorts.splice(self.reserverdPorts.indexOf(self.id), 1);
+      self._sendUpdateToGod();
     });
+    // fire off a new update now that we have a new angel 
+    self._sendUpdateToGod();
   }; 
-  utilities.getFreePort(reserverdPorts, func);
+  utilities.getFreePort(self.reserverdPorts, func);
 };
 
 Seraph.prototype._announceAngel = function(data, callback) {
