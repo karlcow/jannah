@@ -130,11 +130,15 @@ God.prototype._onSeraphUpdate = function(socket, status) {
 
 God.prototype._onDisconnect = function(socket, err) {
   var self = this;
-  if(err)
-
-  self._seraphim = Object.reject(self._seraphim, socket.id);
-  console.log('Active seraphim ' + JSON.stringify(self._seraphim));
-  console.log('\n\n');  
+  var seraph = Object.has(self._seraphim, socket.id) ? self._seraphim[socket.id] : null;
+  
+  if(err){
+    logger.warn('A seraph went down, and we had an error - seraph - ' + JSON.stringify(seraph) + '\n err ' + err);
+  }
+  else if (seraph && !err){
+    logger.info('A seraph went down ' +  JSON.stringify(seraph))
+    self._seraphim = Object.reject(self._seraphim, socket.id);
+  }
 };
 
 function main() {
