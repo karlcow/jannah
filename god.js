@@ -1,23 +1,28 @@
 /*
  * God sees everything, knows everything, controls everything ...
+ * Handle Seraphs that only want one angel exclusively.
  */
-
-/* global setTimeout */
-
+ 
 var acquire = require('acquire')
-  , config = acquire('config')
-  , events = require('events') 
-  , http = require('http')
-  , io = require('socket.io')
-  , util = require('util')
-  , _ = require('underscore')
   , bodyParser = require('body-parser')
   , compression = require('compression')
   , config = acquire('config')
-  , events = require('events')
   , express = require('express')
   , http = require('http')
+  , io = require('socket.io')
+  , Papertrail = require('winston-papertrail').Papertrail
+  , util = require('util')
+  , winston = require('winston')
   ;
+
+var logger = new winston.Logger({
+  transports: [
+      new Papertrail({
+          host: 'logs.papertrailapp.com',
+          port: 38599
+      })
+  ]
+});
 
 var God =  function(argv, done) {
   this.argv_ = argv;
@@ -27,8 +32,6 @@ var God =  function(argv, done) {
   this._backChannel = null;
   this.init();
 };
-
-God.prototype = new events.EventEmitter();
 
 God.prototype.init = function() {
   var self = this;
@@ -55,14 +58,19 @@ God.prototype._handleRequest = function(req, res) {
   switch (url) {
     case "/new":
       var seraph = self._delegate();
-      console.log(seraph);
-      if (seraph === undefined)
+      if (!seraph){
+        logger.warn('New request for an Angel failed because God doesnt think any are available !');
         return callback(Object.merge({"status" : "There doesn't seem to be any Seraph available "},
                                      self._seraphim));
-      seraph.ip = "127.0.0.1";
+      }
+      // TODO temp, remove once live
+      seraph.ip = "localhost";
       var seraphUrl = "http://" + seraph.ip + ":" + parseInt(config.SERAPH_PORT) + "/new";
-      console.log(seraphUrl);
+      logger.info('New request for an Angel - redirect to ' + seraphUrl);
       res.redirect(302, seraphUrl);
+      break;
+    case "/health":
+      return callback(self._seraphim);
       break;
     default:
       break;
@@ -71,15 +79,44 @@ God.prototype._handleRequest = function(req, res) {
 
 God.prototype._delegate = function() {
   var self = this;
-  var seraphim = Object.keys(self._seraphim).map(function(key) {return self._seraphim[key];});
-  var seraph = _.min(seraphim, function(seraph) {return seraph.activeAngels;});
-  return seraph;
+  var notFound = true;
+  var ignore = [];
+  var theChosenOne = null;
+
+  while(notFound){
+    var seraph = self._mostIdleSeraph(ignore);
+    if(!seraph)
+      break;
+    // high io will cause high load avg put not mem issues
+    // often points to browser issues, watch this first.
+    if(seraph.health.loadavg.average() > 3){
+      ignore.push(seraph);
+      continue;
+    }
+    // check for mem issues
+    // check for high cpu
+    theChosenOne = seraph;
+    notFound = false;
+  }
+
+  return theChosenOne;
 };
 
-//God.prototype.
+// Finds a seraph which has the least number of active angels going on.
+God.prototype._mostIdleSeraph = function(ignore){
+  var self = this;
+  var seraphim = Object.keys(self._seraphim).map(function(key) {return self._seraphim[key];});
+  if(ignore)
+    seraphim = seraphim.subtract(ignore);
+  return seraphim.max(function(seraph) {return seraph.maxAngels - seraph.activeAngels;});  
+}
+
 God.prototype._onConnect = function(socket) {
   var self = this;
-  self._seraphim[socket.id] = {};
+  // let the health updates begin. to avoid any race condition, fill in the blanks to begin with. 
+  // there is no chance this seraph will be chosen to produce a tab
+  self._seraphim[socket.id] = {"health":{"timestamp":0,"loadavg":[0],"uptime":0,"freemem":0,"totalmem":0},
+                               "ip":null,"activeAngels":0,"maxAngels":0};
   socket.on('disconnect', self._onDisconnect.bind(self, socket));
   socket.on('seraphUpdate', self._onSeraphUpdate.bind(self, socket));
 };
@@ -91,11 +128,17 @@ God.prototype._onSeraphUpdate = function(socket, status) {
   self._seraphim[socket.id] = status;
 };
 
-God.prototype._onDisconnect = function(socket) {
+God.prototype._onDisconnect = function(socket, err) {
   var self = this;
-  self._seraphim = Object.reject(self._seraphim, socket.id);
-  console.log('Active seraphim ' + JSON.stringify(self._seraphim));
-  console.log('\n\n');  
+  var seraph = Object.has(self._seraphim, socket.id) ? self._seraphim[socket.id] : null;
+  
+  if(err){
+    logger.warn('A seraph went down, and we had an error - seraph - ' + JSON.stringify(seraph) + '\n err ' + err);
+  }
+  else if (seraph && !err){
+    logger.info('A seraph went down ' +  JSON.stringify(seraph))
+    self._seraphim = Object.reject(self._seraphim, socket.id);
+  }
 };
 
 function main() {
@@ -124,16 +167,3 @@ function main() {
 }
 
 main();
-
-
-/*
-require('winston-papertrail').Papertrail;
-var logger = new winston.Logger({
-  transports: [
-      new winston.transports.Papertrail({
-          host: 'logs.papertrailapp.com',
-          port: 38599
-      })
-  ]
-});
-*/
