@@ -1,1 +1,2 @@
-{ "maxAngels" : 5 }
+{ "maxAngels" : 5 ,
+  "location" : { "country" : "gb", "city" : "london"}}

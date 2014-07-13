@@ -45,11 +45,7 @@ Utilities.getNetworkIP = function(callback) {
 
   ip.whatismyip(options, function(err, data){
     if (err === null) {
-      callback(err, data.ip);
+      callback(err, data);
     }
   });
-};
-
-Utilities.getMaxAngels = function(callback) {
-  return config.ANGEL_PORT_COUNT;
 };

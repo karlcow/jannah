@@ -9,6 +9,7 @@
     "connect": "*",
     "enum": "0.2.x",
     "express": "latest",
+    "geoip-lite" : "x.x.x",
     "method-override": "*",
     "node-promise": "0.5.x",
     "os-monitor": "*",
