@@ -9,9 +9,9 @@ var Angel = module.exports = function() {
   this._time = 0;
   this._resources = {};
   this._orphanResources = [];
-  this._tests = {};
   this._lastcall = 0;
   this._autoDestructId = null;
+  this._consoleLog = [];
   this.init();
 };
 
@@ -28,6 +28,7 @@ Angel.prototype.init = function() {
   self._page.onResourceReceived = function(response) {self._onResourceReceived(response);};
   self._page.onResourceTimeout = function(request) {self._onResourceTimeout(request);};
   self._page.onResourceError = function(resourceError) {self._onResourceError(resourceError);};
+  self._page.onConsoleMessage = function(msg, lineNum, sourceId) {self._onConsoleMessage(msg, lineNum, sourceId);};
   try {
     self._server.listen(self._port,
               function(request, response) { 
@@ -39,7 +40,7 @@ Angel.prototype.init = function() {
     phantom.exit();
   }
   console.log("Starting Angel on port: " + self._port);
-  self.resetAutoDestruct();
+  self._resetAutoDestruct();
 };
 
 
@@ -60,7 +61,7 @@ Angel.prototype._announceAngel = function() {
 
 Angel.prototype._onResourceRequested = function(requestData) {
   var self = this;
-  console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
+  //console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
   self._resources[requestData.id] = {
     request: requestData,
     response: null,
@@ -86,7 +87,7 @@ Angel.prototype._onResourceReceived = function(response) {
       break;
   }
   self._resources[response.id].response = response;
-  console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
+  //console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
 };
 
 
@@ -94,7 +95,7 @@ Angel.prototype._onResourceError = function(request) {
   var self = this;
   self._orphanResources.splice(self._orphanResources.indexOf(request.id), 1);
   self._resources[request.id].request = request;
-  console.log('Request (#' + request.id + ', timed out: "' + JSON.stringify(self._resources[request.id]));
+  //console.log('Request (#' + request.id + ', timed out: "' + JSON.stringify(self._resources[request.id]));
 };
 
 
@@ -102,9 +103,14 @@ Angel.prototype._onResourceTimeout = function(resourceError) {
   var self = this;
   self._orphanResources.splice(self._orphanResources.indexOf(resourceError.id), 1);
   self._resources[resourceError.id].response = resourceError;
-  console.log('Request (#' + resourceError.id + ' had error: "' + JSON.stringify(self._resources[resourceError.id]));
+  //console.log('Request (#' + resourceError.id + ' had error: "' + JSON.stringify(self._resources[resourceError.id]));
 };
 
+Angel.prototype._onConsoleMessage = function(msg, lineNum, sourceId) {
+  var self = this;
+  self._consoleLog.push({msg: msg, lineNum: lineNum, sourceId: sourceId});
+  console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
+};
 
 Angel.prototype._open = function(url, callback) {
   var self = this;
@@ -174,27 +180,31 @@ Angel.prototype._ping = function(callback) {
 };
 
 
-Angel.prototype._addTest = function(name, script, callback) {
+Angel.prototype._evaluate = function(script, callback) {
   var self = this;
-  self._tests[name] = {script: script, result: null};
-  callback({success: true});
+  var result = self._page.evaluateJavaScript("(" + script + ")()");
+  callback({script: script, result: result});
 };
 
 
-Angel.prototype._runTests = function(callback) {
+Angel.prototype._evaluateOnGecko = function(script, callback) {
   /*jslint evil: true */
   'use strict';
   var self = this;
-  for (var i in self._tests)
-    if (i !== null)
-      self._tests[i].result = eval('(' + self._tests[i].script + ')');
-  callback({success: true, tests: self._tests});
+  var result = eval(script);
+  callback({script: script, result: result});
 };
 
 
-Angel.prototype.resetAutoDestruct = function() {
+Angel.prototype._getConsoleLog = function(callback) {
   var self = this;
-  console.log("Resetting auto Destruct");
+  callback({consoleLog: self._consoleLog});
+};
+
+
+Angel.prototype._resetAutoDestruct = function() {
+  var self = this;
+  //console.log("Resetting auto Destruct");
   window.clearTimeout(self._autoDestructId);
   self._autoDestructId = window.setTimeout(phantom.exit, 120000);
 };
@@ -212,24 +222,24 @@ Angel.prototype._handleRequest = function(request, response) {
 
   switch(request.url) {
     case "/open":
-      self.resetAutoDestruct();
+      self._resetAutoDestruct();
       self._open(data.url, callback);
       break;
     case "/addCookie":
-      self.resetAutoDestruct();
+      self._resetAutoDestruct();
       self._addCookie(data.name, data.value, data.domain, data.path,
                data.httponly, data.secure, data.expires, callback);
       break; 
     case "/setUserAgent":
-      self.resetAutoDestruct();
+      self._resetAutoDestruct();
       self._setUserAgent(data.userAgent, callback);
       break;
     case "/getResources":
-      self.resetAutoDestruct();
+      self._resetAutoDestruct();
       self._getResources(callback);
       break;
     case "/getScreenshot":
-      self.resetAutoDestruct();
+      self._resetAutoDestruct();
       self._getScreenshot(callback);
       break;
     case "/destroy":
@@ -238,20 +248,24 @@ Angel.prototype._handleRequest = function(request, response) {
     case "/ping":
       self._ping(callback);
       break;
-    case "/addTest":
-      self.resetAutoDestruct();
-      self._addTest(data.name, data.script, callback);
+    case "/evaluate":
+      self._resetAutoDestruct();
+      self._evaluate(data.script, callback);
       break;
-    case "/runTests":
-      self.resetAutoDestruct();
-          self._runTests(callback);
-            break;
-        default:
-            console.log("WHAT DO YOU WANT?");
-            response.statusCode = 500;
-            response.write("");
-            response.close();
-            return;
+    case "/evaluateOnGecko":
+      self._evaluateOnGecko(data.script, callback);
+      self._resetAutoDestruct();
+      break;
+    case "/getConsoleLog":
+      self._resetAutoDestruct();
+      self._getConsoleLog(callback);
+      break;
+    default:
+      console.log("WHAT DO YOU WANT?");
+      response.statusCode = 500;
+      response.write("");
+      response.close();
+      return;
     }
 };
 

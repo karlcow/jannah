@@ -33,17 +33,16 @@ cookie = {"domain": ".sweatytacobo.com",
 response = do_command(url, "addCookie", cookie)
 
 # Set User Agent
-data = {'userAgent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) '
-        + 'AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334'
-        + ' Safari/7534.48.3'}
+data = {'userAgent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:30.0) Gecko/20100101 Firefox/30.0'}
 response = do_command(url, "setUserAgent", data)
 
 
-# Open URL
-data = {'url': 'http://ebay.de'}
-response = do_command(url, "open", data)
+data = {'script': 'self._page.onLoadFinished = function(){ console.log("HELP"); };'}
+response = do_command(url, "evaluateOnGecko", data)
 
-#time.sleep(5)
+# Open URL
+data = {'url': 'http://www.google.com/'}
+response = do_command(url, "open", data)
 
 # Get Resources
 response = do_command(url, "getResources")
@@ -54,17 +53,15 @@ for key in keys:
     print key, json.dumps(resources[key], sort_keys=True, indent=4, separators=(',', ': '))
 print ""
 
-
 # Take Screenshot
 response = do_command(url, "getScreenshot")
 #screenshot_url = json.loads(response.text)["result"]
 #print "\nThe Screenshot " + screenshot_url + "\n"
 
-data = {'name': 'resourcesLength', 'script': 'function () { return Object.keys(self._resources).length; }()'}
-#data = {'name': 'resourcesLength', 'script': 'return Object.keys(self._resources).length'}
-response = do_command(url, "addTest", data)
+data = {'script': "function(){return document.getElementsByClassName('ctr-p').length>0}"}
+response = do_command(url, "evaluate", data)
 
-response = do_command(url, "runTests")
+response = do_command(url, "getConsoleLog")
 
 # Destroy Tab
-response = do_command(url, "destroy")
+# response = do_command(url, "destroy")
