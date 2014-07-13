@@ -25,8 +25,7 @@ var logger = new winston.Logger({
 });
 
 var God =  function(argv, done) {
-  this.argv_ = argv;
-  this.done_ = done;
+  this._argv = argv;
   this._seraphim = {};
   this._server = null;
   this._backChannel = null;
@@ -60,8 +59,9 @@ God.prototype._handleRequest = function(req, res) {
       var seraph = self._delegate();
       if (!seraph){
         logger.warn('New request for an Angel failed because God doesnt think any are available !');
-        return callback(Object.merge({"status" : "There doesn't seem to be any Seraph available "},
-                                     self._seraphim));
+        callback(Object.merge({"status" : "There doesn't seem to be any Seraph available "},
+                              self._seraphim));
+        break;
       }
       // TODO temp, remove once live
       seraph.ip = "localhost";
@@ -70,7 +70,7 @@ God.prototype._handleRequest = function(req, res) {
       res.redirect(302, seraphUrl);
       break;
     case "/health":
-      return callback(self._seraphim);
+      callback(self._seraphim);
       break;
     default:
       break;
@@ -109,7 +109,7 @@ God.prototype._mostIdleSeraph = function(ignore){
   if(ignore)
     seraphim = seraphim.subtract(ignore);
   return seraphim.max(function(seraph) {return seraph.maxAngels - seraph.activeAngels;});  
-}
+};
 
 God.prototype._onConnect = function(socket) {
   var self = this;
@@ -136,7 +136,7 @@ God.prototype._onDisconnect = function(socket, err) {
     logger.warn('A seraph went down, and we had an error - seraph - ' + JSON.stringify(seraph) + '\n err ' + err);
   }
   else if (seraph && !err){
-    logger.info('A seraph went down ' +  JSON.stringify(seraph))
+    logger.info('A seraph went down ' +  JSON.stringify(seraph));
     self._seraphim = Object.reject(self._seraphim, socket.id);
   }
 };

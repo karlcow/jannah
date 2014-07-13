@@ -77,8 +77,8 @@ var Seraph = module.exports = function() {
   this._health = {};
   this.init();
   this._ip = "";
-  this.maxAngels = 0;
-  this.reserverdPorts = [];  
+  this._maxAngels = 0;
+  this._reserverdPorts = [];  
 };
 
 Seraph.prototype.init = function() {
@@ -93,7 +93,7 @@ Seraph.prototype.init = function() {
   self._openBackChannel(function(err) { if (err) console.log(err); });
 };
 
-Seraph.prototype.exit = function(err){
+Seraph.prototype._exit = function(err){
   var self = this;
   if(err)
     console.warn('Seraph is going down because of an error ' + err);
@@ -101,7 +101,7 @@ Seraph.prototype.exit = function(err){
     console.log('Seraph exited cleanly ...');
 
   self._backChannel.emit('disconnect', err);
-}
+};
 
 Seraph.prototype._openBackChannel = function(done) {
   var self = this;
@@ -118,7 +118,7 @@ Seraph.prototype._openBackChannel = function(done) {
     })
     .seq(function() {
       var seraph = require(config.SERAPH_CONFIG_PATH);
-      self.maxAngels = seraph.maxAngels;
+      self._maxAngels = seraph.maxAngels;
       this();
     })
     .seq(function(){
@@ -176,19 +176,19 @@ Seraph.prototype._new = function(callback) {
     if (port === null)
       return callback({url: null});
 
-    self.reserverdPorts.push(port);
+    self._reserverdPorts.push(port);
     self._angels[port] = new Summoner(port, callback);
     self._angels[port].on('exit', function() {
       console.log("Purging :" + port);
       delete self._angels[port];
       // fire off a new update on an exit.
-      self.reserverdPorts.splice(self.reserverdPorts.indexOf(self.id), 1);
+      self._reserverdPorts.splice(self._reserverdPorts.indexOf(self.id), 1);
       self._sendUpdateToGod();
     });
     // fire off a new update now that we have a new angel 
     self._sendUpdateToGod();
   }; 
-  utilities.getFreePort(self.reserverdPorts, func);
+  utilities.getFreePort(self._reserverdPorts, func);
 };
 
 Seraph.prototype._announceAngel = function(data, callback) {
