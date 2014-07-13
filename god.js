@@ -74,19 +74,19 @@ God.prototype._handleRequest = function(req, res) {
       callback(self._seraphim);
       break;
     case "/locations":
-      callback(self.formatLocations());
+      callback(self._formatLocations());
       break;
     default:
       break;
   }
 };
 
-God.prototype.formatLocations = function(){
+God.prototype._formatLocations = function(){
   var self = this;
   var result;
-  result = Object.keys(self._seraphim).map(function(seraph){return seraph.location});
+  result = Object.keys(self._seraphim).map(function(seraph){return seraph.location;});
   return JSON.stringify(result);
-}
+};
 
 God.prototype._delegate = function() {
   var self = this;
