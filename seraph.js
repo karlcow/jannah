@@ -172,19 +172,22 @@ Seraph.prototype._sendUpdateToGod = function() {
 
 Seraph.prototype._new = function(callback) {
   var self = this;
+  
   var func = function(port) {
     if (port === null)
       return callback({url: null});
 
-    self._reserverdPorts.push(port);
-    self._angels[port] = new Summoner(port, callback);
-    self._angels[port].on('exit', function() {
+    var onExit = function() {
       console.log("Purging :" + port);
+      self._angels[port].removeAllListeners(['exit']);
       delete self._angels[port];
-      // fire off a new update on an exit.
       self._reserverdPorts.splice(self._reserverdPorts.indexOf(self.id), 1);
       self._sendUpdateToGod();
-    });
+    };
+    
+    self._reserverdPorts.push(port);
+    self._angels[port] = new Summoner(port, callback);
+    self._angels[port].on('exit', onExit);
     // fire off a new update now that we have a new angel 
     self._sendUpdateToGod();
   }; 
