@@ -64,4 +64,4 @@ response = do_command(url, "evaluate", data)
 response = do_command(url, "getConsoleLog")
 
 # Destroy Tab
-# response = do_command(url, "destroy")
+response = do_command(url, "destroy")
