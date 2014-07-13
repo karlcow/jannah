@@ -9,6 +9,7 @@ var acquire = require('acquire')
   , config = acquire('config')
   , express = require('express')
   , http = require('http')
+  , geoip = require('geoip-lite')  
   , io = require('socket.io')
   , Papertrail = require('winston-papertrail').Papertrail
   , util = require('util')
@@ -72,10 +73,20 @@ God.prototype._handleRequest = function(req, res) {
     case "/health":
       callback(self._seraphim);
       break;
+    case "/locations":
+      callback(self.formatLocations());
+      break;
     default:
       break;
   }
 };
+
+God.prototype.formatLocations = function(){
+  var self = this;
+  var result;
+  result = Object.keys(self._seraphim).map(function(seraph){return seraph.location});
+  return JSON.stringify(result);
+}
 
 God.prototype._delegate = function() {
   var self = this;
@@ -123,8 +134,8 @@ God.prototype._onConnect = function(socket) {
 
 God.prototype._onSeraphUpdate = function(socket, status) {
   var self = this;
-  console.log("On StatusUpdate !! " + socket.id + JSON.stringify(status));
-  console.log('\n\n');
+  var geo = geoip.lookup(status.ip);
+  logger.info("StatusUpdate : " + socket.id + ', status : ' + JSON.stringify(status) + ' geo info : ' + JSON.stringify(geo));
   self._seraphim[socket.id] = status;
 };
 
