@@ -155,13 +155,13 @@ God.prototype._mostIdleSeraph = function(country, city, ignore){
   var seraphim = Object.values(self._seraphim)
 
   seraphim = seraphim.filter(function(seraph) {
-    if(!country && !city) // we don't care about location here. 
+    if(!country) // we don't care about location here. 
       return true;
 
     if(ignore.has(seraph.ip))
       return false;
 
-    if(seraph.location.country === country && seraph.location.city === city)
+    if(seraph.location.country === country && (seraph.location.city === city || !city))
       return true;
     else
       return false;
