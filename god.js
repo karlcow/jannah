@@ -49,19 +49,43 @@ God.prototype.init = function() {
 God.prototype._handleRequest = function(req, res) {
   var self = this;
   var url = req.url;
+  var body = null;
+
+  try{
+    body = JSON.parse(req.body);
+  }
+  catch(err){}
+
   var callback = function(data) {
     res.statusCode = 200;
     res.write(JSON.stringify(data));
     res.end();
   };
   
-  switch (url) {
-    case "/new":
-      var seraph = self._delegate();
+  var parts = url.split("/");
+  var action = parts.last();
+  console.log('parts ' + parts.toString());
+  switch (action) {
+    case "new":
+      var country = null
+        , city = null
+        ;
+
+      if(parts.length === 3){
+        country = parts[0];
+        city = parts[1];
+      }
+      else if (body && Object.has(body, 'country') && Object.has(body, 'city')){
+        country = body.country;
+        city = body.city;
+      }
+      
+      var seraph = self._delegate(country, city);
+
       if (!seraph){
         logger.warn('New request for an Angel failed because God doesnt think any are available !');
         callback(Object.merge({"status" : "There doesn't seem to be any Seraph available "},
-                              self._seraphim));
+                            self._seraphim));
         break;
       }
       // TODO temp, remove once live
@@ -70,38 +94,50 @@ God.prototype._handleRequest = function(req, res) {
       logger.info('New request for an Angel - redirect to ' + seraphUrl);
       res.redirect(302, seraphUrl);
       break;
-    case "/health":
-      callback(self._seraphim);
+    case "health":
+      callback(self._locationBasedView(false));
       break;
-    case "/locations":
-      callback(self._formatLocations());
+    case "locations":
+      callback(self._locationBasedView(true));
       break;
     default:
+      callback("What was that ?, didn't recognize your call.");     
       break;
   }
-};
+}
 
-God.prototype._formatLocations = function(){
+God.prototype._locationBasedView = function(forPublicView){
   var self = this;
-  var result;
-  result = Object.keys(self._seraphim).map(function(seraph){return seraph.location;});
-  return JSON.stringify(result);
-};
+  var formatted = {};
 
-God.prototype._delegate = function() {
+  Object.values(self._seraphim, function(seraph){
+    var location = seraph.location;
+    if(!Object.has(formatted, location.country.toLowerCase()))
+      formatted[location.country.toLowerCase()] = [];
+    var newRequest = "/" + location.country.toLowerCase() + "/" + location.city.toLowerCase() + "/new";
+    formatted[location.country.toLowerCase()].push({city: location.city.toLowerCase(), path: newRequest, health: seraph.health, availableAngels : seraph.maxAngels - seraph.activeAngels});
+  });
+  
+  if(forPublicView)
+    formatted = Object.reject(formatted, "health");
+
+  return JSON.stringify(formatted);
+}
+
+God.prototype._delegate = function(country, city) {
   var self = this;
   var notFound = true;
   var ignore = [];
   var theChosenOne = null;
-
+  console.log('delegate ' + country + city);
   while(notFound){
-    var seraph = self._mostIdleSeraph(ignore);
+    var seraph = self._mostIdleSeraph(country, city, ignore);
     if(!seraph)
       break;
     // high io will cause high load avg put not mem issues
     // often points to browser issues, watch this first.
-    if(seraph.health.loadavg.average() > 3){
-      ignore.push(seraph);
+    if(seraph.health.loadavg.average() > 4){
+      ignore.push(seraph.ip);
       continue;
     }
     // check for mem issues
@@ -114,11 +150,23 @@ God.prototype._delegate = function() {
 };
 
 // Finds a seraph which has the least number of active angels going on.
-God.prototype._mostIdleSeraph = function(ignore){
+God.prototype._mostIdleSeraph = function(country, city, ignore){
   var self = this;
-  var seraphim = Object.keys(self._seraphim).map(function(key) {return self._seraphim[key];});
-  if(ignore)
-    seraphim = seraphim.subtract(ignore);
+  var seraphim = Object.values(self._seraphim)
+
+  seraphim = seraphim.filter(function(seraph) {
+    if(!country) // we don't care about location here. 
+      return true;
+
+    if(ignore.has(seraph.ip))
+      return false;
+
+    if(seraph.location.country === country && (seraph.location.city === city || !city))
+      return true;
+    else
+      return false;
+  });
+
   return seraphim.max(function(seraph) {return seraph.maxAngels - seraph.activeAngels;});  
 };
 
