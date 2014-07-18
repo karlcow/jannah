@@ -104,7 +104,7 @@ God.prototype._handleRequest = function(req, res) {
       callback("What was that ?, didn't recognize your call.");     
       break;
   }
-}
+};
 
 God.prototype._locationBasedView = function(forPublicView){
   var self = this;
@@ -122,7 +122,7 @@ God.prototype._locationBasedView = function(forPublicView){
     formatted = Object.reject(formatted, "health");
 
   return JSON.stringify(formatted);
-}
+};
 
 God.prototype._delegate = function(country, city) {
   var self = this;
@@ -152,7 +152,7 @@ God.prototype._delegate = function(country, city) {
 // Finds a seraph which has the least number of active angels going on.
 God.prototype._mostIdleSeraph = function(country, city, ignore){
   var self = this;
-  var seraphim = Object.values(self._seraphim)
+  var seraphim = Object.values(self._seraphim);
 
   seraphim = seraphim.filter(function(seraph) {
     if(!country) // we don't care about location here. 

@@ -41,7 +41,7 @@ data = {'script': 'self._page.onLoadFinished = function(){ console.log("HELP"); 
 response = do_command(url, "evaluateOnGecko", data)
 
 # Open URL
-data = {'url': 'http://www.google.com/'}
+data = {'url': 'http://www.ebay.com/'}
 response = do_command(url, "open", data)
 
 # Get Resources
@@ -55,8 +55,10 @@ print ""
 
 # Take Screenshot
 response = do_command(url, "getScreenshot")
-#screenshot_url = json.loads(response.text)["result"]
-#print "\nThe Screenshot " + screenshot_url + "\n"
+base64 = json.loads(response.text)["data"]
+fh = open("imageToSave.png", "wb")
+fh.write(base64.decode('base64'))
+fh.close()
 
 data = {'script': "function(){return document.getElementsByClassName('ctr-p').length>0}"}
 response = do_command(url, "evaluate", data)
