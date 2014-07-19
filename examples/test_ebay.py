@@ -18,8 +18,8 @@ def do_command(url, command, data={}):
 
 # Get a tab from the Netherlands
 
-data = {'country': 'NL'}
-response = do_command("http://127.0.0.1:8421", "new", data)
+data = {'country': 'gb'}
+response = do_command("http://127.0.0.1:7331", "new", data)
 url = json.loads(response.text)["url"]
 
 # Set Cookies

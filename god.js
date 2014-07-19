@@ -49,22 +49,22 @@ God.prototype.init = function() {
 God.prototype._handleRequest = function(req, res) {
   var self = this;
   var url = req.url;
-  var body = null;
-
-  try{
-    body = JSON.parse(req.body);
-  }
-  catch(err){}
+  var body = req.body;
 
   var callback = function(data) {
     res.statusCode = 200;
     res.write(JSON.stringify(data));
     res.end();
   };
-  
+
   var parts = url.split("/");
   var action = parts.last();
+  console.log("------- Requessted -------");
+  console.log(url);
+  console.log(body);
   console.log('parts ' + parts.toString());
+  console.log("--------------------------");
+
   switch (action) {
     case "new":
       var country = null
@@ -75,7 +75,7 @@ God.prototype._handleRequest = function(req, res) {
         country = parts[0];
         city = parts[1];
       }
-      else if (body && Object.has(body, 'country') && Object.has(body, 'city')){
+      else if (body && Object.has(body, 'country')){
         country = body.country;
         city = body.city;
       }
@@ -158,7 +158,7 @@ God.prototype._mostIdleSeraph = function(country, city, ignore){
     if(!country) // we don't care about location here. 
       return true;
 
-    if(ignore.has(seraph.ip))
+    if(ignore.indexOf(seraph.ip) > -1)
       return false;
 
     if(seraph.location.country === country && (seraph.location.city === city || !city))
@@ -172,10 +172,6 @@ God.prototype._mostIdleSeraph = function(country, city, ignore){
 
 God.prototype._onConnect = function(socket) {
   var self = this;
-  // let the health updates begin. to avoid any race condition, fill in the blanks to begin with. 
-  // there is no chance this seraph will be chosen to produce a tab
-  self._seraphim[socket.id] = {"health":{"timestamp":0,"loadavg":[0],"uptime":0,"freemem":0,"totalmem":0},
-                               "ip":null,"activeAngels":0,"maxAngels":0};
   socket.on('disconnect', self._onDisconnect.bind(self, socket));
   socket.on('seraphUpdate', self._onSeraphUpdate.bind(self, socket));
 };

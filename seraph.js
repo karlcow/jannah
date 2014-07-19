@@ -51,13 +51,10 @@ Seraph.prototype._exit = function(err){
 
 Seraph.prototype._openBackChannel = function(done) {
   var self = this;
+  var seraph = require(config.SERAPH_CONFIG_PATH);
+  self._maxAngels = seraph.maxAngels;
+  self._location = seraph.location;
   Seq()
-    .seq(function() {
-      var seraph = require(config.SERAPH_CONFIG_PATH);
-      self._maxAngels = seraph.maxAngels;
-      self._location = seraph.location;
-      this();
-    })
     .seq(function() {
       utilities.getNetworkIP(this);
     })
@@ -102,7 +99,8 @@ Seraph.prototype._talkToGod = function(done) {
 
   self._backChannel.on('connect', function() {
     console.log('BackChannel open and ready for use');
-    // Every minute send an health update to God. 
+    // Every minute send an health update to God.
+    self._sendUpdateToGod.bind(self);
     var tenSeconds = 10 * 1000;
     setInterval(self._sendUpdateToGod.bind(self), tenSeconds);
   });
@@ -165,7 +163,6 @@ Seraph.prototype._handleRequest = function(req, res) {
       self._new(callback);
       break;
     case "/announceAngel":
-      console.log("---");
       self._announceAngel(data, callback);
       break;
     default:
