@@ -19,7 +19,7 @@ function getEnv(value, defaultValue) {
 }
 
 // GOD
-config.GOD_ADDRESS = getEnv(env.GOD_ADDRESS, "127.0.0.1");
+config.GOD_ADDRESS = getEnv(env.GOD_ADDRESS, "5.101.106.121");
 config.GOD_PORT = getEnv(env.GOD_PORT, 7331);
 config.GOD_BACK_CHANNEL_PORT = getEnv(env.GOD_BACK_CHANNEL_PORT, 3000);
 

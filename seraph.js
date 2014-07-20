@@ -17,19 +17,25 @@ var acquire = require('acquire')
   , osm = require("os-monitor")
   ;
 
-var Seraph = module.exports = function() {
+var Seraph = module.exports = function(args) {
   this._angels = {};
+  this._debug = false;
+
+  if(args[2])
+    this._debug = args[2] === "debug";
+ 
   this._backChannel = null;
   this._health = {};
   this._ip = "";
   this._maxAngels = 0;
   this._reserverdPorts = [];  
   this._location = {};
-  this.init();
+  this.init(args);
 };
 
-Seraph.prototype.init = function() {
+Seraph.prototype.init = function(args) {
   var self = this;    
+
   var app = express();
   app.use(compression());
   app.use(bodyParser.json());
@@ -90,7 +96,8 @@ Seraph.prototype._talkToGod = function(done) {
     transports : ['websocket']
   };
 
-  self._backChannel = io.connect('http://' + config.GOD_ADDRESS + ':' + config.GOD_BACK_CHANNEL_PORT, socketOptions);
+  var godIp = self._debug ? "127.0.0.1" : config.GOD_ADDRESS; 
+  self._backChannel = io.connect('http://' + godIp + ':' + config.GOD_BACK_CHANNEL_PORT, socketOptions);
 
   self._backChannel.on('connect_error', function(err) {
     console.log('BackChannel Error received : ' + err);
@@ -170,4 +177,29 @@ Seraph.prototype._handleRequest = function(req, res) {
   }
 };
 
-new Seraph();
+function main() {
+
+  process.on('SIGINT', function() {
+    process.exit(1);
+  });
+
+  var done = function(err) {
+    if (err) {
+      console.warn(err);
+      console.trace();
+    }
+    process.exit(err ? 1 : 0);
+  };
+  
+  var args = process.argv;
+
+  if (args[2] && args[2] === 'help' ) {
+    console.log('Usage: node seraph.js [options]\nOptions: debug\nhelp\n');
+    done();
+  }
+  else
+    new Seraph(args);
+}
+
+main();
+

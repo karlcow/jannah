@@ -9,13 +9,14 @@ var acquire = require('acquire')
   , config = acquire('config')
   , express = require('express')
   , http = require('http')
-  , geoip = require('geoip-lite')  
   , io = require('socket.io')
   , Papertrail = require('winston-papertrail').Papertrail
   , util = require('util')
   , sugar = require('sugar')
   , winston = require('winston')
   ;
+
+var configInUse = config;
 
 var logger = new winston.Logger({
   transports: [
@@ -27,7 +28,12 @@ var logger = new winston.Logger({
 });
 
 var God =  function(argv, done) {
-  this._argv = argv;
+  
+  this._debug = false;
+
+  if(argv[2])
+    this._debug = argv[2] === "debug";
+
   this._seraphim = {};
   this._server = null;
   this._backChannel = null;
@@ -89,8 +95,7 @@ God.prototype._handleRequest = function(req, res) {
                             self._seraphim));
         break;
       }
-      // TODO temp, remove once live
-      seraph.ip = "localhost";
+      seraph.ip = self._debug ? "127.0.0.1" : seraph.ip;
       var seraphUrl = "http://" + seraph.ip + ":" + parseInt(config.SERAPH_PORT) + "/new";
       logger.info('New request for an Angel - redirect to ' + seraphUrl);
       res.redirect(302, seraphUrl);
@@ -147,6 +152,8 @@ God.prototype._delegate = function(country, city) {
     notFound = false;
   }
 
+  console.log('delegate found ' + JSON.stringify(theChosenOne));
+
   return theChosenOne;
 };
 
@@ -179,8 +186,7 @@ God.prototype._onConnect = function(socket) {
 
 God.prototype._onSeraphUpdate = function(socket, status) {
   var self = this;
-  var geo = geoip.lookup(status.ip);
-  logger.info("StatusUpdate : " + socket.id + ', status : ' + JSON.stringify(status) + ' geo info : ' + JSON.stringify(geo));
+  logger.info("StatusUpdate : " + socket.id + ', status : ' + JSON.stringify(status));
   self._seraphim[socket.id] = status;
 };
 
@@ -198,7 +204,6 @@ God.prototype._onDisconnect = function(socket, err) {
 };
 
 function main() {
-  var args = process.argv.slice(4);
 
   process.on('SIGINT', function() {
     process.exit(1);
@@ -211,7 +216,9 @@ function main() {
     }
     process.exit(err ? 1 : 0);
   };
-    
+  
+  var args = process.argv;
+
   if (args === 'help' ) {
     console.log('Usage: node god.js [options]\nOptions:\n');
     console.log('\tgod state', '\tGets the state of God.');
