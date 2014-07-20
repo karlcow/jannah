@@ -22,6 +22,7 @@
     "sugar": "1.x.x",
     "underscore": "*",
     "URIjs": "1.x.x",
+    "whatismyip" : "x",
     "winston": "0.x.x",
     "winston-papertrail": "*"
   },
