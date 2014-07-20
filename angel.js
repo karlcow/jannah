@@ -157,10 +157,8 @@ Angel.prototype._getResources = function(callback) {
 
 Angel.prototype._getScreenshot = function(callback) {
   var self = this;
-  var url = "/tmp/" + Date.now() + ".png";
-  self._page.render(url);
-  //self.upload(url);
-  callback({success: true, url: url});
+  var base64 = self._page.renderBase64('PNG');
+  callback({success: true, data: base64});
 };
 
 
