@@ -13,6 +13,7 @@ var acquire = require('acquire')
   , io = require('socket.io')
   , Papertrail = require('winston-papertrail').Papertrail
   , util = require('util')
+  , sugar = require('sugar')
   , winston = require('winston')
   ;
 
