@@ -30,10 +30,10 @@ var Seraph = module.exports = function(args) {
   this._maxAngels = 0;
   this._reserverdPorts = [];  
   this._location = {};
-  this.init(args);
+  this.init();
 };
 
-Seraph.prototype.init = function(args) {
+Seraph.prototype.init = function() {
   var self = this;    
 
   var app = express();

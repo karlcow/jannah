@@ -16,8 +16,6 @@ var acquire = require('acquire')
   , winston = require('winston')
   ;
 
-var configInUse = config;
-
 var logger = new winston.Logger({
   transports: [
       new Papertrail({
