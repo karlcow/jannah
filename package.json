@@ -19,9 +19,9 @@
     "slimer" : "0.0.3",
     "socket.io": "1.0.*",
     "socket.io-client": "1.0.*",
-    "sugar": "1.x.x",
+    "sugar": "x.x.x",
     "underscore": "*",
-    "URIjs": "1.x.x",
+    "URIjs": "x.x.x",
     "whatismyip" : "x",
     "winston": "0.x.x",
     "winston-papertrail": "*"
