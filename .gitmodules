@@ -1,0 +1,3 @@
+[submodule "submodules/slimerjs"]
+	path = submodules/slimerjs
+	url = https://github.com/laurentj/slimerjs.git
