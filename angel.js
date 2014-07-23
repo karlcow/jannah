@@ -5,23 +5,23 @@ var webpage = require("webpage"),
   config = require('config');
 
 
-var Angel = module.exports = function() {
+var Angel = module.exports = function(ip, port) {
   this._time = 0;
   this._resources = {};
   this._orphanResources = [];
-  this._lastcall = 0;
   this._autoDestructId = null;
   this._consoleLog = [];
-  this.init();
+  this.init(ip, port);
 };
 
 
-Angel.prototype.init = function() {
+Angel.prototype.init = function(ip, port) {
   var self = this;
-  self.lastcall = Date.now();
-  self._port = parseInt(phantom.args[0]);
+  self._ip = ip;
+  self._port = port;
   self._page = webpage.create();
   self._server = webserver.create();
+  console.log(ip + ":" + port);
   self._page.viewportSize = { width: 1280, height: 800 };
   self._page.settings.resourceTimeout = 60000;
   self._page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
@@ -30,12 +30,11 @@ Angel.prototype.init = function() {
   self._page.onResourceError = function(resourceError) {self._onResourceError(resourceError);};
   self._page.onConsoleMessage = function(msg, lineNum, sourceId) {self._onConsoleMessage(msg, lineNum, sourceId);};
   try {
-    self._server.listen(self._port,
-              function(request, response) { 
-                self._handleRequest(request, response);
-              });
+    self._server.listen(ip + ":" + port,
+                        function(request, response) {
+                          self._handleRequest(request, response);
+                        });
     self._announceAngel();
-
   } catch (ex) {
     phantom.exit();
   }
@@ -268,5 +267,8 @@ Angel.prototype._handleRequest = function(request, response) {
 };
 
 
-if (phantom.args[0] !== undefined)
-    new Angel();
+if (phantom.args[0] !== undefined && phantom.args[1] !== undefined) {
+  var ip = phantom.args[0];
+  var port = phantom.args[1];
+  new Angel(ip, port);
+}

@@ -138,7 +138,9 @@ Seraph.prototype._new = function(callback) {
     };
     
     self._reserverdPorts.push(port);
-    self._angels[port] = new Summoner(port, callback);
+    var ip =  self._debug ? "127.0.0.1" : self._ip;
+
+    self._angels[port] = new Summoner(ip, port, callback);
     self._angels[port].on('exit', onExit);
     // fire off a new update now that we have a new angel 
     self._sendUpdateToGod();
