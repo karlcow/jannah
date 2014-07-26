@@ -23,7 +23,7 @@ Angel.prototype.init = function(ip, port) {
   self._page = webpage.create();
   self._server = webserver.create();
   console.log(ip + ":" + port);
-  self._page.viewportSize = { width: 1024, height: 4096 };
+  self._page.viewportSize = { width:1024, height:768 };
   self._page.settings.resourceTimeout = 60000;
   self._page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
   self._page.onResourceReceived = function(response) {self._onResourceReceived(response);};
@@ -157,8 +157,12 @@ Angel.prototype._getResources = function(callback) {
 Angel.prototype._getScreenshot = function(callback) {
   var self = this;
   utils.fixFlash();
-  var base64 = self._page.renderBase64('PNG');
-  callback({success: true, data: base64});
+  self._page.viewportSize = { width:1024, height:4096 };
+  window.setTimeout(function() {
+    self._page.viewportSize = { width:1024, height:768 };
+    var base64 = self._page.renderBase64('PNG');
+    callback({success: true, data: base64}); 
+  }, 1000);
 };
 
 
