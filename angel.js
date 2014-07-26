@@ -2,7 +2,8 @@
 
 var webpage = require("webpage"),
   webserver = require('webserver'),
-  config = require('config');
+  config = require('config'),
+  utils = require('angelUtilities');
 
 
 var Angel = module.exports = function(ip, port) {
@@ -22,7 +23,7 @@ Angel.prototype.init = function(ip, port) {
   self._page = webpage.create();
   self._server = webserver.create();
   console.log(ip + ":" + port);
-  self._page.viewportSize = { width: 1280, height: 800 };
+  self._page.viewportSize = { width: 1024, height: 4096 };
   self._page.settings.resourceTimeout = 60000;
   self._page.onResourceRequested = function(requestData) {self._onResourceRequested(requestData);};
   self._page.onResourceReceived = function(response) {self._onResourceReceived(response);};
@@ -120,7 +121,6 @@ Angel.prototype._open = function(url, callback) {
   self._page.openUrl(url).then(function(status) {
     while (self._orphanResources.length > 0)
        slimer.wait(1);
-
     callback({success: status === 'success' ? true : false,
           elapsedTime: Date.now() - self._time});
   });
@@ -156,6 +156,7 @@ Angel.prototype._getResources = function(callback) {
 
 Angel.prototype._getScreenshot = function(callback) {
   var self = this;
+  utils.fixFlash();
   var base64 = self._page.renderBase64('PNG');
   callback({success: true, data: base64});
 };
@@ -216,7 +217,9 @@ Angel.prototype._handleRequest = function(request, response) {
     response.write(data);
     response.close();
   };
-
+  self._page.evaluate(function () {
+      window.focus();
+    });
   switch(request.url) {
     case "/open":
       self._resetAutoDestruct();

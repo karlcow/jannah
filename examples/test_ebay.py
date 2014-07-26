@@ -5,7 +5,7 @@ import time
 
 
 def do_command(url, command, data={}):
-    print "executing %s/%s      " % (url, command),
+    print "executing %s/%s" % (url, command),
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post('%s/%s' % (url, command),
                              data=json.dumps(data), headers=headers)
@@ -41,7 +41,7 @@ data = {'script': 'self._page.onLoadFinished = function(){ console.log("HELP"); 
 response = do_command(url, "evaluateOnGecko", data)
 
 # Open URL
-data = {'url': 'http://www.ebay.com/'}
+data = {'url': 'http://www.youtube.de'}
 response = do_command(url, "open", data)
 
 # Get Resources
@@ -52,6 +52,10 @@ print "\nThe Resources \n"
 for key in keys:
     print key, json.dumps(resources[key], sort_keys=True, indent=4, separators=(',', ': '))
 print ""
+
+print "GOING TO SLEEP"
+time.sleep(1)
+print "DONE SLEEPING"
 
 # Take Screenshot
 response = do_command(url, "getScreenshot")
