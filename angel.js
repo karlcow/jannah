@@ -127,7 +127,7 @@ Angel.prototype._open = function(url, callback) {
 };
 
 
-Angel.prototype._addCookie = function(name, value, domain, path, httponly, secure, expires, callback) {
+Angel.prototype._addCookie = function(name, value, domain, path, httponly, secure, expires, expiry, callback) {
   var success = phantom.addCookie({
     'name':   name,
     'value':  value,
@@ -135,7 +135,8 @@ Angel.prototype._addCookie = function(name, value, domain, path, httponly, secur
     'path':   path,
     'httponly': httponly ? httponly : false,
     'secure':   secure ? secure : false,
-    'expires':  expires ? expires : (new Date()).getTime() + 3600
+    'expires':  expires ? expires : null,
+    'expiry':  expiry ? expiry : null
   });
   callback({success: success});
 };
@@ -232,7 +233,7 @@ Angel.prototype._handleRequest = function(request, response) {
     case "/addCookie":
       self._resetAutoDestruct();
       self._addCookie(data.name, data.value, data.domain, data.path,
-               data.httponly, data.secure, data.expires, callback);
+                      data.httponly, data.secure, data.expires, data.expiry, callback);
       break; 
     case "/setUserAgent":
       self._resetAutoDestruct();
