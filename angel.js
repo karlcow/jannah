@@ -61,7 +61,7 @@ Angel.prototype._announceAngel = function() {
 
 Angel.prototype._onResourceRequested = function(requestData) {
   var self = this;
-  //console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
+  console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
   self._resources[requestData.id] = {
     request: requestData,
     response: null,
@@ -87,7 +87,7 @@ Angel.prototype._onResourceReceived = function(response) {
       break;
   }
   self._resources[response.id].response = response;
-  //console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
+  console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
 };
 
 
@@ -95,7 +95,7 @@ Angel.prototype._onResourceError = function(request) {
   var self = this;
   self._orphanResources.splice(self._orphanResources.indexOf(request.id), 1);
   self._resources[request.id].request = request;
-  //console.log('Request (#' + request.id + ', timed out: "' + JSON.stringify(self._resources[request.id]));
+  console.log('Request (#' + request.id + ', timed out: "' + JSON.stringify(self._resources[request.id]));
 };
 
 
@@ -103,7 +103,7 @@ Angel.prototype._onResourceTimeout = function(resourceError) {
   var self = this;
   self._orphanResources.splice(self._orphanResources.indexOf(resourceError.id), 1);
   self._resources[resourceError.id].response = resourceError;
-  //console.log('Request (#' + resourceError.id + ' had error: "' + JSON.stringify(self._resources[resourceError.id]));
+  console.log('Request (#' + resourceError.id + ' had error: "' + JSON.stringify(self._resources[resourceError.id]));
 };
 
 Angel.prototype._onConsoleMessage = function(msg, lineNum, sourceId) {
@@ -249,7 +249,6 @@ Angel.prototype._handleRequest = function(request, response) {
       self._getResources(callback);
       break;
     case "/getScreenshot":
-      console.log("GETTING SCREENSHOT");
       self._resetAutoDestruct();
       self._getScreenshot(callback);
       break;
