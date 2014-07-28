@@ -21,7 +21,7 @@ def do_command(url, command, data={}):
 # Get a tab from the Great Britain
 
 data = {'country': 'gb', 'city': 'london'}
-response = do_command("http://5.101.106.121:7331", "new", data)
+response = do_command("http://127.0.0.1:7331", "new", data)
 
 
 # The tab url from the previous request, all upcomin requests will be sent to that url
@@ -76,6 +76,8 @@ fh.close()
 data = {'script': "function(){return document.getElementsByClassName('ctr-p').length>0}"}
 response = do_command(url, "evaluate", data)
 
+
+response = do_command(url, "getCookies", cookie)
 
 response = do_command(url, "getConsoleLog")
 

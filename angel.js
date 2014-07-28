@@ -127,7 +127,7 @@ Angel.prototype._open = function(url, callback) {
 };
 
 
-Angel.prototype._addCookie = function(name, value, domain, path, httponly, secure, expires, expiry, callback) {
+Angel.prototype._addCookie = function(name, value, domain, path, httponly, secure, expires, callback) {
   var success = phantom.addCookie({
     'name':   name,
     'value':  value,
@@ -135,8 +135,7 @@ Angel.prototype._addCookie = function(name, value, domain, path, httponly, secur
     'path':   path,
     'httponly': httponly ? httponly : false,
     'secure':   secure ? secure : false,
-    'expires':  expires ? expires : null,
-    'expiry':  expiry ? expiry : null
+    'expires':  expires ? expires : (new Date()).getTime() + 3600
   });
   callback({success: success});
 };
@@ -205,6 +204,12 @@ Angel.prototype._getConsoleLog = function(callback) {
 };
 
 
+Angel.prototype._getCookies = function(callback) {
+  var self = this;
+  callback({cookies: phantom.cookies});
+};
+
+
 Angel.prototype._resetAutoDestruct = function() {
   var self = this;
   //console.log("Resetting auto Destruct");
@@ -233,7 +238,7 @@ Angel.prototype._handleRequest = function(request, response) {
     case "/addCookie":
       self._resetAutoDestruct();
       self._addCookie(data.name, data.value, data.domain, data.path,
-                      data.httponly, data.secure, data.expires, data.expiry, callback);
+                      data.httponly, data.secure, data.expires, callback);
       break; 
     case "/setUserAgent":
       self._resetAutoDestruct();
@@ -244,6 +249,7 @@ Angel.prototype._handleRequest = function(request, response) {
       self._getResources(callback);
       break;
     case "/getScreenshot":
+      console.log("GETTING SCREENSHOT");
       self._resetAutoDestruct();
       self._getScreenshot(callback);
       break;
@@ -258,12 +264,16 @@ Angel.prototype._handleRequest = function(request, response) {
       self._evaluate(data.script, callback);
       break;
     case "/evaluateOnGecko":
-      self._evaluateOnGecko(data.script, callback);
       self._resetAutoDestruct();
+      self._evaluateOnGecko(data.script, callback);
       break;
     case "/getConsoleLog":
       self._resetAutoDestruct();
       self._getConsoleLog(callback);
+      break;
+    case "/getCookies":
+      self._resetAutoDestruct();
+      self._getCookies(callback);
       break;
     default:
       console.log("WHAT DO YOU WANT?");

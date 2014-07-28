@@ -3,9 +3,9 @@
 ## API summary
 
 We provide a very simple API:
-1) Get tab from desired location
-2) Perform Actions on tab.
 
+* Get tab from desired location
+* Perform Actions on tab.
 
 
 ## More detailed
@@ -34,8 +34,7 @@ We provide a very simple API:
       - path: the path in URLs on which the cookie is valid
       - httponly: true if the cookie should only be sent to, and can only be modified by, an HTTP connection.
       - secure: true if the cookie should only be sent over a secure connection.
-      - expires: Holds the expiration date, formated in ISO format. This property should be null for cookies existing only during a session.
-      - expiry: : Holds the expiration date, in milliseconds since the epoch. This property should be null for cookies existing only during a session.
+      - expires: Holds the expiration date, in milliseconds since the epoch. This property should be null for cookies existing only during a session.
   - returns:
       - success: boolean (true/false) if adding the cookie was successful 
 
@@ -83,3 +82,8 @@ We provide a very simple API:
 * $URL / destroy:
   - returns:
       - success: boolean (true/false) if opening the url was successful
+
+
+* $URL / getCookies:
+  - returns:
+      - cookies: a list of cookies
