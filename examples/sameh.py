@@ -24,7 +24,8 @@ def process_url(title, link):
     path = MAIN_DIR + "/" + title + "/" + str(int(time.time()))
     os.makedirs(path)
     
-    response = do_command("http://127.0.0.1:7331", "new", {})
+    data = {'country': 'eg', 'city': 'cairo'}
+    response = do_command("http://127.0.0.1:7331", "new", data)
 
     # Open URL
     url = json.loads(response.text)["url"]
