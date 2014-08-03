@@ -162,7 +162,7 @@ Angel.prototype._getScreenshot = function(callback) {
     self._page.viewportSize = { width:1024, height:768 };
     var base64 = self._page.renderBase64('PNG');
     callback({success: true, data: base64}); 
-  }, 1000);
+  }, 5000);
 };
 
 
