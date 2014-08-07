@@ -50,9 +50,12 @@ response = do_command(url, "evaluateOnGecko", data)
 
 
 # Open URL
-data = {'url': 'http://www.google.de'}
+data = {'url': 'http://www.youtube.de', 'waitForResources': False}
 response = do_command(url, "open", data)
 
+
+data = {'timeout': 60000}
+response = do_command(url, "waitForResources", data)
 
 # Get Resources 
 response = do_command(url, "getResources")

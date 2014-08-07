@@ -181,6 +181,10 @@ Angel.prototype._getScreenshot = function(callback) {
 
 Angel.prototype._waitForResources = function (timeout, callback) {
   var self = this;
+  if (timeout === null || timeout === undefined)
+  {
+    timeout = 60000;
+  }
   var time = Date.now();
   while (self._orphanResources.length > 0 && Date.now() - time < timeout) {
     console.log("Orphaned resources: " + self._orphanResources.length);
@@ -297,6 +301,10 @@ Angel.prototype._handleRequest = function(request, response) {
     case "/getCookies":
       self._resetAutoDestruct();
       self._getCookies(callback);
+      break;
+    case "/waitForResources":
+      self._resetAutoDestruct();
+      self._waitForResources(data.timeout, callback);
       break;
     default:
       console.log("WHAT DO YOU WANT?");
