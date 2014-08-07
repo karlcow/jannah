@@ -106,23 +106,34 @@ Angel.prototype._onResourceTimeout = function(resourceError) {
   console.log('Request (#' + resourceError.id + ' had error: "' + JSON.stringify(self._resources[resourceError.id]));
 };
 
+
 Angel.prototype._onConsoleMessage = function(msg, lineNum, sourceId) {
   var self = this;
   self._consoleLog.push({msg: msg, lineNum: lineNum, sourceId: sourceId});
   console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
 };
 
-Angel.prototype._open = function(url, callback) {
+
+Angel.prototype._open = function(url, waitForResources, callback) {
   var self = this;
   self._resources = {};
   self._orphanResources = [];
-  this._time = Date.now();
+  self._time = Date.now();
   
+  if (waitForResources === undefined)
+    waitForResources = true;
+
   self._page.openUrl(url).then(function(status) {
-    while (self._orphanResources.length > 0)
-       slimer.wait(1);
-    callback({success: status === 'success' ? true : false,
-          elapsedTime: Date.now() - self._time});
+
+    var callbackFunc = function() {
+      callback({success: status === 'success' ? true : false,
+        elapsedTime: Date.now() - self._time});
+    };
+
+    if (waitForResources)
+      self._waitForResources(60000, function(){callbackFunc();});
+    else
+      callbackFunc();
   });
 };
 
@@ -159,10 +170,23 @@ Angel.prototype._getScreenshot = function(callback) {
   utils.fixFlash();
   self._page.viewportSize = { width:1024, height:4096 };
   window.setTimeout(function() {
-    self._page.viewportSize = { width:1024, height:768 };
-    var base64 = self._page.renderBase64('PNG');
-    callback({success: true, data: base64}); 
+    self._waitForResources(60000, function() {
+      self._page.viewportSize = { width:1024, height:768 };
+      var base64 = self._page.renderBase64('PNG');
+      callback({success: true, data: base64});
+    });
   }, 5000);
+};
+
+
+Angel.prototype._waitForResources = function (timeout, callback) {
+  var self = this;
+  var time = Date.now();
+  while (self._orphanResources.length > 0 && Date.now() - time < timeout) {
+    console.log("Orphaned resources: " + self._orphanResources.length);
+    slimer.wait(1);
+  }
+  callback();
 };
 
 
@@ -233,7 +257,7 @@ Angel.prototype._handleRequest = function(request, response) {
   switch(request.url) {
     case "/open":
       self._resetAutoDestruct();
-      self._open(data.url, callback);
+      self._open(data.url, data.waitForResources, callback);
       break;
     case "/addCookie":
       self._resetAutoDestruct();
