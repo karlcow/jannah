@@ -19,12 +19,11 @@ function getEnv(value, defaultValue) {
 }
 
 // GOD
-config.GOD_ADDRESS = getEnv(env.GOD_ADDRESS, "5.101.106.121");
+config.GOD_ADDRESS = getEnv(env.GOD_ADDRESS, "127.0.0.1");
 config.GOD_PORT = getEnv(env.GOD_PORT, 7331);
 config.GOD_BACK_CHANNEL_PORT = getEnv(env.GOD_BACK_CHANNEL_PORT, 3000);
 
 // SERAPH TODO its seraph singular and seraphim plural ! 
-config.SERAPH_ADDRESS = getEnv(env.SERAPH_ADDRESS, "127.0.0.1");
 config.SERAPH_PORT = getEnv(env.SERAPH_PORT, 8421);
 config.SERAPH_CONFIG_PATH = getEnv(env.SERAPH_CONFIG_PATH, '/tmp/seraphConfig.json');
 config.ANGEL_START_PORT = getEnv(env.ANGEL_START_PORT, 55550);
