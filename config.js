@@ -1,21 +1,21 @@
 /* global exports, process, require */
 /* jshint unused: false */
 
-var config = exports
-  , system = null
-  , env    = null
-  , sugar  = null;
+var config = exports,
+  system = null,
+  env = null,
+  sugar = null;
 
 try {
-    system = require('system');
-    env = system.env;
+  system = require('system');
+  env = system.env;
 } catch (ex) {
-    env = process.env;
-    sugar = require('sugar');
+  env = process.env;
+  sugar = require('sugar');
 }
-    
+
 function getEnv(value, defaultValue) {
-    return (typeof value !== 'undefined' && value !== '') ? value : defaultValue;
+  return (typeof value !== 'undefined' && value !== '') ? value : defaultValue;
 }
 
 // GOD
@@ -29,6 +29,5 @@ config.SERAPH_CONFIG_PATH = getEnv(env.SERAPH_CONFIG_PATH, '/tmp/seraphConfig.js
 config.ANGEL_START_PORT = getEnv(env.ANGEL_START_PORT, 55550);
 config.ANGEL_PORT_COUNT = getEnv(env.ANGEL_PORT_COUNT, 5);
 try {
-    config.ANGEL_PORTS = Number.range(config.ANGEL_START_PORT, config.ANGEL_START_PORT + config.ANGEL_PORT_COUNT - 1).every();
-} catch (ex) {
-}
+  config.ANGEL_PORTS = Number.range(config.ANGEL_START_PORT, config.ANGEL_START_PORT + config.ANGEL_PORT_COUNT - 1).every();
+} catch (ex) {}

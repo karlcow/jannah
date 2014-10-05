@@ -20,7 +20,7 @@ def do_command(url, command, data={}):
   
 # Get a tab from the Great Britain
 
-data = {'country': 'gb', 'city': 'london'}
+data = {}
 response = do_command("http://127.0.0.1:7331", "new", data)
 
 

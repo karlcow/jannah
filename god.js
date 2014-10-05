@@ -55,7 +55,7 @@ God.prototype._handleRequest = function(req, res) {
   var self = this;
   var url = req.url;
   var body = req.body;
-
+  
   var callback = function(data) {
     res.statusCode = 200;
     res.write(JSON.stringify(data));
