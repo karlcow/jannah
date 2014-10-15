@@ -11,6 +11,7 @@ var Angel = module.exports = function (ip, port) {
   this._resources = {};
   this._orphanResources = [];
   this._autoDestructId = null;
+  this._busy = false;
   this._consoleLog = [];
   this.init(ip, port);
 };
@@ -200,6 +201,7 @@ Angel.prototype._getResources = function (callback) {
 
 Angel.prototype._getScreenshot = function (callback) {
   var self = this;
+  self._busy = true;
   utils.fixFlash();
   self._page.viewportSize = {
     width: 1024,
@@ -212,6 +214,7 @@ Angel.prototype._getScreenshot = function (callback) {
         height: 768
       };
       var base64 = self._page.renderBase64('PNG');
+      self._busy = false;
       callback({
         success: true,
         data: base64
@@ -228,7 +231,7 @@ Angel.prototype._waitForResources = function (timeout, callback) {
   }
   var time = Date.now();
   while (self._orphanResources.length > 0 && Date.now() - time < timeout) {
-    console.log("Orphaned resources: " + self._orphanResources.length);
+    console.log("Orphaned resources: " + self._orphanResources.length + " " + self._orphanResources);
     slimer.wait(1);
   }
   callback();
@@ -294,8 +297,14 @@ Angel.prototype._getCookies = function (callback) {
 Angel.prototype._resetAutoDestruct = function () {
   var self = this;
   //console.log("Resetting auto Destruct");
+  var destroyFunc = function(){
+    if (!self._busy)
+      phantom.exit();
+    else
+      self._resetAutoDestruct();
+  };
   window.clearTimeout(self._autoDestructId);
-  self._autoDestructId = window.setTimeout(phantom.exit, 120000);
+  self._autoDestructId = window.setTimeout(destroyFunc, 120000);
 };
 
 
