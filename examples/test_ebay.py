@@ -12,6 +12,7 @@ def do_command(url, command, data={}):
     print response.status_code
     print response.text.encode('utf-8').strip()
     if response.status_code == 500:
+        do_command(url, "destroy")
         sys.exit(1)
 
     return response
@@ -43,11 +44,9 @@ response = do_command(url, "addCookie", cookie)
 data = {'userAgent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:30.0) Gecko/20100101 Firefox/30.0'}
 response = do_command(url, "setUserAgent", data)
 
-
 # Run a gecko based Javascript, if a result is to be expected it can be found under {'result'} of the json string returned
 data = {'script': 'self._page.onLoadFinished = function(){ console.log("HELP"); };'}
 response = do_command(url, "evaluateOnGecko", data)
-
 
 # Open URL
 data = {'url': 'http://www.youtube.de', 'waitForResources': False}
@@ -57,6 +56,7 @@ response = do_command(url, "open", data)
 data = {'timeout': 60000}
 response = do_command(url, "waitForResources", data)
 
+"""
 # Get Resources 
 response = do_command(url, "getResources")
 resources = json.loads(response.text)["resources"]
@@ -81,9 +81,12 @@ response = do_command(url, "evaluate", data)
 
 
 response = do_command(url, "getCookies", cookie)
+"""
+
+response = do_command(url, "getAds")
 
 response = do_command(url, "getConsoleLog")
 
 
 # Destroy Tab
-response = do_command(url, "destroy")
+#response = do_command(url, "destroy")

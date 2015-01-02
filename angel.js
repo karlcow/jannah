@@ -3,13 +3,15 @@
 var webpage = require("webpage"),
   webserver = require('webserver'),
   config = require('config'),
-  utils = require('angelUtilities');
+  utils = require('angelUtilities'),
+  adblock = require('adblock');
 
 
 var Angel = module.exports = function (ip, port) {
   this._time = 0;
   this._resources = {};
   this._orphanResources = [];
+  this._ads = [];
   this._autoDestructId = null;
   this._busy = false;
   this._consoleLog = [];
@@ -23,6 +25,7 @@ Angel.prototype.init = function (ip, port) {
   self._port = port;
   self._page = webpage.create();
   self._server = webserver.create();
+  self._adblock =  new adblock();
   console.log(ip + ":" + port);
   console.log("Creating new Tab");
   self._page.viewportSize = {
@@ -30,8 +33,8 @@ Angel.prototype.init = function (ip, port) {
     height: 768
   };
   self._page.settings.resourceTimeout = 60000;
-  self._page.onResourceRequested = function (requestData) {
-    self._onResourceRequested(requestData);
+  self._page.onResourceRequested = function (requestData, networkRequest) {
+    self._onResourceRequested(requestData, networkRequest);
   };
   self._page.onResourceReceived = function (response) {
     self._onResourceReceived(response);
@@ -78,9 +81,14 @@ Angel.prototype._announceAngel = function () {
 };
 
 
-Angel.prototype._onResourceRequested = function (requestData) {
+Angel.prototype._onResourceRequested = function (requestData, networkRequest) {
   var self = this;
   console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
+  if (self._adblock.getIsAd(requestData.url) === true) {
+    console.log("-------->", requestData.url);
+    //networkRequest.abort();
+    self._ads.push(requestData.id);
+  }
   self._resources[requestData.id] = {
     request: requestData,
     response: null,
@@ -95,15 +103,16 @@ Angel.prototype._onResourceRequested = function (requestData) {
 Angel.prototype._onResourceReceived = function (response) {
   var self = this;
   switch (response.stage) {
-  case 'start':
-    self._resources[response.id].waiting = response.time.getTime() - self._resources[response.id].request.time.getTime();
-    break;
-  case 'end':
-    self._resources[response.id].receiving = response.time.getTime() - self._resources[response.id].response.time.getTime();
-    self._orphanResources.splice(self._orphanResources.indexOf(response.id), 1);
-    break;
-  default:
-    break;
+    case 'start':
+      self._resources[response.id].waiting = response.time.getTime() - self._resources[response.id].request.time.getTime();
+      break;
+    case 'end':
+      self._resources[response.id].receiving = response.time.getTime() - self._resources[response.id].response.time.getTime();
+      self._orphanResources.splice(self._orphanResources.indexOf(response.id), 1);
+      console.log("\n\nbody: " + response.body);
+      break;
+    default:
+      break;
   }
   self._resources[response.id].response = response;
   console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
@@ -294,6 +303,19 @@ Angel.prototype._getCookies = function (callback) {
 };
 
 
+Angel.prototype._getAds = function (callback) {
+  var self = this;
+  var adUris = [];
+  for (var i in self._ads) {
+    var adId = self._ads[i];
+    adUris.push(self._resources[adId]);
+  }
+  callback({
+    ads: adUris
+  });
+};
+
+
 Angel.prototype._resetAutoDestruct = function () {
   var self = this;
   //console.log("Resetting auto Destruct");
@@ -363,6 +385,10 @@ Angel.prototype._handleRequest = function (request, response) {
   case "/getCookies":
     self._resetAutoDestruct();
     self._getCookies(callback);
+    break;
+  case "/getAds":
+    self._resetAutoDestruct();
+    self._getAds(callback);
     break;
   case "/waitForResources":
     self._resetAutoDestruct();
