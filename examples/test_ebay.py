@@ -49,7 +49,7 @@ data = {'script': 'self._page.onLoadFinished = function(){ console.log("HELP"); 
 response = do_command(url, "evaluateOnGecko", data)
 
 # Open URL
-data = {'url': 'http://www.youtube.de', 'waitForResources': False}
+data = {'url': 'http://www.engadget.com', 'waitForResources': False}
 response = do_command(url, "open", data)
 
 

@@ -83,10 +83,12 @@ Angel.prototype._announceAngel = function () {
 
 Angel.prototype._onResourceRequested = function (requestData, networkRequest) {
   var self = this;
-  console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
+  //console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
   if (self._adblock.getIsAd(requestData.url) === true) {
-    console.log("-------->", requestData.url);
+    console.log("--------> " + requestData.url);
     //networkRequest.abort();
+    //var page = webpage.create();
+    //page.openUrl(requestData.url);
     self._ads.push(requestData.id);
   }
   self._resources[requestData.id] = {
@@ -109,21 +111,20 @@ Angel.prototype._onResourceReceived = function (response) {
     case 'end':
       self._resources[response.id].receiving = response.time.getTime() - self._resources[response.id].response.time.getTime();
       self._orphanResources.splice(self._orphanResources.indexOf(response.id), 1);
-      console.log("\n\nbody: " + response.body);
       break;
     default:
       break;
   }
   self._resources[response.id].response = response;
-  console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
+  //console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
 };
 
 
 Angel.prototype._onResourceError = function (request) {
   var self = this;
   self._orphanResources.splice(self._orphanResources.indexOf(request.id), 1);
-  self._resources[request.id].request = request;
-  console.log('Request (#' + request.id + ', timed out: "' + JSON.stringify(self._resources[request.id]));
+  //self._resources[request.id].request = request;
+  //console.log('Request (#' + request.id + ', timed out: "' + JSON.stringify(self._resources[request.id]));
 };
 
 
@@ -131,7 +132,7 @@ Angel.prototype._onResourceTimeout = function (resourceError) {
   var self = this;
   self._orphanResources.splice(self._orphanResources.indexOf(resourceError.id), 1);
   self._resources[resourceError.id].response = resourceError;
-  console.log('Request (#' + resourceError.id + ' had error: "' + JSON.stringify(self._resources[resourceError.id]));
+  //console.log('Request (#' + resourceError.id + ' had error: "' + JSON.stringify(self._resources[resourceError.id]));
 };
 
 
@@ -306,10 +307,37 @@ Angel.prototype._getCookies = function (callback) {
 Angel.prototype._getAds = function (callback) {
   var self = this;
   var adUris = [];
+  var adSelectors = [];
   for (var i in self._ads) {
-    var adId = self._ads[i];
-    adUris.push(self._resources[adId]);
+    if (self._ads[i] !== undefined) {
+      var adId = self._ads[i];
+      adUris.push(self._resources[adId]);
+      // extract domain name from a URL
+      var sitename = function (url){
+        var result = /^https?:\/\/([^\/]+)/.exec( url );
+        if ( result ) {
+          return( result[1] );
+        } else {
+          return( null );
+        }
+      };
+      var iframe = self._page.evaluate(function (url) {
+        return document.querySelector('iframe[src="'+ url +'"]');
+      }, self._resources[adId].request.url);
+      if (iframe !== null) {
+        adSelectors.push(iframe);
+        console.log(iframe); 
+      }
+      var embed = self._page.evaluate(function (url) {
+        return document.querySelector('embed[src="'+ url +'"]');
+      }, self._resources[adId].request.url);
+      if (embed !== null) {
+        adSelectors.push(embed);
+        console.log(embed); 
+      }
+    }
   }
+  console.log("========== " + adSelectors.length + " ==========");
   callback({
     ads: adUris
   });
