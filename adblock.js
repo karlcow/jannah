@@ -77,7 +77,7 @@ AdBlock.prototype._parseFilterList = function(path){
 
 AdBlock.prototype._loadFilterLists = function(){
   var self = this;
-  self._parseFilterList('easylist.txt');
+  self._parseFilterList('../easylist.txt');
 };
 
 AdBlock.prototype.getIsAd = function (url) {
@@ -95,7 +95,7 @@ AdBlock.prototype.getIsAd = function (url) {
   return false;
 };
 
-/*
+
 var adblock = new AdBlock();
 var webPage = require('webpage');
 var page = webPage.create();
@@ -110,8 +110,7 @@ page.viewportSize = {
         width: 1024,
         height: 768
       };
-page.open('http://www.engadget.com', function(status) {
+page.open('http://bilder.bild.de/fotos/cb02-small-26407904/Bild/16.bild.jpg', function(status) {
   console.log('Status: ' + status);
   // Do other things here...
 });
-*/

@@ -48,7 +48,6 @@ Worker.prototype.onResourceRequested = function (requestData, networkRequest) {
     //console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
     if (self.adBlock.getIsAd(requestData.url) === true) {
         self.ads.push(requestData.id);
-        networkRequest.abort();
     }
     self.resources[requestData.id] = {
         request: requestData,
@@ -71,9 +70,7 @@ Worker.prototype.onResourceError = function (request) {
     'use strict';
     var self = this;
     self.orphanResources.splice(self.orphanResources.indexOf(request.id), 1);
-    if (self.resources[request.id] !== undefined) {
-        self.resources[request.id].request = request;
-    }
+    self.resources[request.id].request = request;
     //console.log('Request (#' + request.id + ', errored out: "' + JSON.stringify(self.resources[request.id]));
 };
 
@@ -85,7 +82,7 @@ Worker.prototype.open = function (url, callback) {
     self.time = Date.now();
 
     self.page.openUrl(url).then(function (status) {
-        self.waitForResources(10000, function () {
+        self.waitForResources(20000, function () {
             callback({
                 success: status === 'success' ? true : false,
                 elapsedTime: Date.now() - self.time
@@ -106,7 +103,6 @@ Worker.prototype.waitForResources = function (timeout, callback) {
     callback();
 };
 
-/*
 Worker.prototype.getAds = function () {
     'use strict';
     var self = this,
@@ -115,13 +111,11 @@ Worker.prototype.getAds = function () {
         i = 0,
         adId = null,
         selector = null,
+        rect = null,
         evaluate = function (url) {
             var selector = document.body.querySelector('*[src="' + url + '"]');
             if (selector !== null) {
-                return {
-                    url: url,
-                    selector: selector
-                };
+                return selector;
             }
         };
 
@@ -129,48 +123,23 @@ Worker.prototype.getAds = function () {
         if (self.ads[i] !== undefined) {
             adId = self.ads[i];
             adUris.push(self.resources[adId]);
-            // extract domain name from a URL
-
+            if (self.resources[adId].response.contentType.indexOf("javascript") !== -1) {
+                console.log(self.resources[adId].request.url);
+            }
             selector = self.page.evaluate(evaluate, self.resources[adId].request.url);
             if (selector !== null) {
-                if (selector.selector.getBoundingClientRect().height !== 0) {
-                    console.log(selector.selector.getBoundingClientRect());
+                rect = selector.getBoundingClientRect();
+
+                while (rect.width < 2 || rect.height < 2) {
+                    selector = selector.parentElement;
+                    rect = selector.getBoundingClientRect();
+                }
+                if (ads.indexOf(selector) === -1 && rect.width > 0 && rect.height > 0) {
                     ads.push(selector);
                 }
             }
         }
     }
-    console.log("========== " + ads.length + " ==========");
-    return ads;
-};
-
-
-Worker.prototype.getIFrames = function () {
-    'use strict';
-    var self = this,
-        ads = [],
-        i = 0,
-        iframes = null,
-        evaluate = function () {
-            var iframes = document.body.querySelectorAll('iframe');
-            if (iframes !== null) {
-                return iframes;
-            }
-        };
-
-    iframes = self.page.evaluate(evaluate);
-    if (iframes !== null) {
-        for (i = 0; i < iframes.length; i += 1) {
-            if (iframes[i].getBoundingClientRect().height !== 0) {
-                console.log(iframes[i].getBoundingClientRect());
-                ads.push({
-                    url: "",
-                    selector: iframes[i]
-                });
-            }
-        }
-    }
-    console.log("========== " + ads.length + " ==========");
     return ads;
 };
 
@@ -184,53 +153,44 @@ Worker.prototype.captureRect = function (target, rect) {
             height: rect.height,
             width: rect.width
         };
-
-
-    console.log(newRect.top + " " + newRect.left + " " + newRect.height + " " + newRect.width + " " + target);
     self.page.clipRect = newRect;
     self.page.render(target);
     self.page.clipRect = previousRect;
 };
 
-*/
-Worker.prototype.cutOutAds = function () {
+
+Worker.prototype.captureAds = function () {
     'use strict';
     var self = this,
         i = 0,
-        j = 0,
-        adId = null,
-        page = null,
-        response = null,
+        ads = null,
+        frame = null,
         adUris = [],
-        ignoreTypes = [
-            null, 'application/x-javascript', 'application/javascript', 'text/javascript', 'text/xml', 'text/plain'
-        ];
+        framesCount = self.page.framesCount,
+        evaluate = function (i) {
+            return window.frames[i];
+        };
 
-    for (i in self.ads) {
-        if (self.ads[i] !== undefined) {
-            adId = self.ads[i];
-            response = self.resources[adId].response;
-            if (ignoreTypes.indexOf(response.contentType) === -1 && response.bodySize >= 100) {
-                adUris.push(self.resources[adId].request.url);
+    ads = self.getAds();
+    for (i = 0; i < ads.length; i += 1) {
+        self.captureRect(Date.now() + ".png", ads[i].getBoundingClientRect());
+        adUris.push(ads[i].src);
+    }
+
+    /*
+    for (i = 0; i < framesCount; i += 1) {
+        frame = self.page.evaluate(evaluate, i);
+        self.page.switchToFrame(i);
+
+        if (frame.frameElement !== null) {
+            if (adUris.indexOf(frame.frameElement.src) === -1) {
+                self.captureAds();
             }
         }
+        self.page.switchToParentFrame();
     }
-
-    adUris = adUris.filter(function (itm, i, a) {
-        return i === a.indexOf(itm);
-    });
-
-    for (j in adUris) {
-        page = WebPage.create();
-        console.log(adUris[j]);
-        page.open(adUris[j], function (status) {
-            console.log(status + " " + adUris[j]);
-        });
-        slimer.wait(2000);
-    }
-
+    */
 };
-
 
 Worker.prototype.run = function (url, userAgent, cookie, callback) {
     'use strict';
@@ -245,31 +205,24 @@ Worker.prototype.run = function (url, userAgent, cookie, callback) {
         phantom.exit();
     }
     self.open(url, function () {
-        slimer.wait(1000);
+        slimer.wait(10000);
         console.log("Cutting out ads");
-        self.cutOutAds();
         self.page.render("screenshot.png");
-        /*
-        ads = self.getAds();
+        self.page.viewportSize = {
+            width: 1280,
+            height: 2048
+        };
+        self.captureAds();
         self.page.render("screenshot.png");
-        for (i = 0; i < ads.length; i += 1) {
-            self.captureRect(i + ".png", ads[i].selector.getBoundingClientRect());
-            console.log(ads[i].selector.id);
-            ads[i].selector.style.display = "none";
-            slimer.wait(2000);
-        }
-        self.page.render("screenshot-noads.png");
-        callback(ads);
-        */
+        callback();
     });
 };
 
 var worker = new Worker();
-worker.run("http://spiegel.de/",
+worker.run("http://bild.de/",
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:30.0) Gecko/20100101 Firefox/30.0',
     null,
-    function (result) {
+    function () {
         'use strict';
-        console.log(result);
-        //phantom.exit();
+        phantom.exit();
     });
