@@ -85,11 +85,8 @@ Angel.prototype._onResourceRequested = function (requestData, networkRequest) {
   var self = this;
   //console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
   if (self._adblock.getIsAd(requestData.url) === true) {
-    console.log("--------> " + requestData.url);
-    //networkRequest.abort();
-    //var page = webpage.create();
-    //page.openUrl(requestData.url);
-    self._ads.push(requestData.id);
+    networkRequest.abort();
+    return;
   }
   self._resources[requestData.id] = {
     request: requestData,

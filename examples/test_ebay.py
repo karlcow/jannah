@@ -49,7 +49,7 @@ data = {'script': 'self._page.onLoadFinished = function(){ console.log("HELP"); 
 response = do_command(url, "evaluateOnGecko", data)
 
 # Open URL
-data = {'url': 'http://www.engadget.com', 'waitForResources': False}
+data = {'url': 'http://www.bild.de', 'waitForResources': False}
 response = do_command(url, "open", data)
 
 
@@ -89,4 +89,4 @@ response = do_command(url, "getConsoleLog")
 
 
 # Destroy Tab
-#response = do_command(url, "destroy")
+response = do_command(url, "destroy")
