@@ -111,7 +111,7 @@ God.prototype._handleRequest = function (req, res) {
     seraph.ip = self._debug ? "127.0.0.1" : seraph.ip;
     var seraphUrl = "http://" + seraph.ip + ":" + parseInt(config.SERAPH_PORT) + "/new";
     logger.info('New request for an Angel - redirect to ' + seraphUrl);
-    res.redirect(302, seraphUrl);
+    res.redirect(307, seraphUrl);
     break;
   case "health":
     callback(self._locationBasedView(false));

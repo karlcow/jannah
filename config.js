@@ -1,10 +1,16 @@
 /* global exports, process, require */
 /* jshint unused: false */
-
-var config = exports,
+var config = {},
   system = null,
   env = null,
   sugar = null;
+
+try {
+  if (module) {
+    config = module.exports;
+  }
+} catch (ex) {}
+
 
 try {
   system = require('system');
@@ -30,4 +36,11 @@ config.ANGEL_START_PORT = getEnv(env.ANGEL_START_PORT, 55550);
 config.ANGEL_PORT_COUNT = getEnv(env.ANGEL_PORT_COUNT, 5);
 try {
   config.ANGEL_PORTS = Number.range(config.ANGEL_START_PORT, config.ANGEL_START_PORT + config.ANGEL_PORT_COUNT - 1).every();
+} catch (ex) {}
+
+
+try {
+  if (!module) {
+    exports.config = config;
+  }
 } catch (ex) {}

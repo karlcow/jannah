@@ -2,12 +2,12 @@
 
 var webpage = require("webpage"),
   webserver = require('webserver'),
-  config = require('config'),
-  utils = require('angelUtilities'),
-  adblock = require('adblock');
+  config = require('./config.js'),
+  utils = require('./angelUtilities.js'),
+  adblock = require('./adblock.js').AdBlock;
 
 
-var Angel = module.exports = function (ip, port) {
+var Angel = function (ip, port) {
   this._time = 0;
   this._resources = {};
   this._orphanResources = [];
@@ -25,9 +25,8 @@ Angel.prototype.init = function (ip, port) {
   self._port = port;
   self._page = webpage.create();
   self._server = webserver.create();
-  self._adblock =  new adblock();
-  console.log(ip + ":" + port);
-  console.log("Creating new Tab");
+  self._adblock = new adblock();
+  console.log("Creating new Tab: " + ip + ":" + port);
   self._page.viewportSize = {
     width: 1024,
     height: 768
@@ -86,32 +85,34 @@ Angel.prototype._onResourceRequested = function (requestData, networkRequest) {
   //console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
   if (self._adblock.getIsAd(requestData.url) === true) {
     networkRequest.abort();
-    return;
+  } else {
+    self._resources[requestData.id] = {
+      request: requestData,
+      response: null,
+      blocking: Date.now() - self._time,
+      waiting: -1,
+      receiving: -1
+    };
+    self._orphanResources.push(requestData.id);
   }
-  self._resources[requestData.id] = {
-    request: requestData,
-    response: null,
-    blocking: Date.now() - self._time,
-    waiting: -1,
-    receiving: -1
-  };
-  self._orphanResources.push(requestData.id);
 };
 
 
 Angel.prototype._onResourceReceived = function (response) {
   var self = this;
   switch (response.stage) {
-    case 'start':
-      self._resources[response.id].waiting = response.time.getTime() - self._resources[response.id].request.time.getTime();
-      break;
-    case 'end':
+  case 'start':
+    self._resources[response.id].waiting = response.time.getTime() - self._resources[response.id].request.time.getTime();
+    break;
+  case 'end':
+    if (self._resources[response.id].response) {
       self._resources[response.id].receiving = response.time.getTime() - self._resources[response.id].response.time.getTime();
-      self._orphanResources.splice(self._orphanResources.indexOf(response.id), 1);
-      break;
-    default:
-      break;
+    }
+    break;
+  default:
+    break;
   }
+  self._orphanResources.splice(self._orphanResources.indexOf(response.id), 1);
   self._resources[response.id].response = response;
   //console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(self._resources[response.id]));
 };
@@ -153,7 +154,7 @@ Angel.prototype._open = function (url, waitForResources, callback) {
   if (waitForResources === undefined)
     waitForResources = true;
 
-  self._page.openUrl(url).then(function (status) {
+  self._page.open(url, function (status) {
 
     var callbackFunc = function () {
       callback({
@@ -234,14 +235,19 @@ Angel.prototype._getScreenshot = function (callback) {
 Angel.prototype._waitForResources = function (timeout, callback) {
   var self = this;
   if (timeout === null || timeout === undefined) {
-    timeout = 60000;
+    timeout = 20000;
   }
   var time = Date.now();
-  while (self._orphanResources.length > 0 && Date.now() - time < timeout) {
-    console.log("Orphaned resources: " + self._orphanResources.length + " " + self._orphanResources);
-    slimer.wait(1);
-  }
-  callback();
+
+  var wait = function () {
+    if (self._orphanResources.length > 0 && Date.now() - time < timeout) {
+      //console.log("Orphaned resources: " + self._orphanResources.length + " " + self._orphanResources);
+      setTimeout(wait, 1000);
+    } else {
+      callback();
+    }
+  };
+  setTimeout(wait, 1000);
 };
 
 
@@ -301,53 +307,13 @@ Angel.prototype._getCookies = function (callback) {
 };
 
 
-Angel.prototype._getAds = function (callback) {
-  var self = this;
-  var adUris = [];
-  var adSelectors = [];
-  for (var i in self._ads) {
-    if (self._ads[i] !== undefined) {
-      var adId = self._ads[i];
-      adUris.push(self._resources[adId]);
-      // extract domain name from a URL
-      var sitename = function (url){
-        var result = /^https?:\/\/([^\/]+)/.exec( url );
-        if ( result ) {
-          return( result[1] );
-        } else {
-          return( null );
-        }
-      };
-      var iframe = self._page.evaluate(function (url) {
-        return document.querySelector('iframe[src="'+ url +'"]');
-      }, self._resources[adId].request.url);
-      if (iframe !== null) {
-        adSelectors.push(iframe);
-        console.log(iframe); 
-      }
-      var embed = self._page.evaluate(function (url) {
-        return document.querySelector('embed[src="'+ url +'"]');
-      }, self._resources[adId].request.url);
-      if (embed !== null) {
-        adSelectors.push(embed);
-        console.log(embed); 
-      }
-    }
-  }
-  console.log("========== " + adSelectors.length + " ==========");
-  callback({
-    ads: adUris
-  });
-};
-
-
 Angel.prototype._resetAutoDestruct = function () {
   var self = this;
   //console.log("Resetting auto Destruct");
-  var destroyFunc = function(){
-    if (!self._busy)
+  var destroyFunc = function () {
+    if (!self._busy) {
       phantom.exit();
-    else
+    } else
       self._resetAutoDestruct();
   };
   window.clearTimeout(self._autoDestructId);
@@ -357,6 +323,8 @@ Angel.prototype._resetAutoDestruct = function () {
 
 Angel.prototype._handleRequest = function (request, response) {
   var self = this;
+  if (!request.post)
+    request.post = "";
   var data = request.post !== "" ? JSON.parse(request.post) : {};
   var callback = function (data) {
     response.statusCode = 200;
@@ -410,10 +378,6 @@ Angel.prototype._handleRequest = function (request, response) {
   case "/getCookies":
     self._resetAutoDestruct();
     self._getCookies(callback);
-    break;
-  case "/getAds":
-    self._resetAutoDestruct();
-    self._getAds(callback);
     break;
   case "/waitForResources":
     self._resetAutoDestruct();

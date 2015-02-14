@@ -1,14 +1,20 @@
-var Utilities = module.exports;
+var Utilities = {};
+
+try {
+  if (module) {
+    Utilities = module.exports;
+  }
+} catch (ex) {}
 
 Utilities.fixFlash = function () {
   // loop through every embed tag on the site
   var embeds = document.getElementsByTagName('embed');
-  for (let i = 0; i < embeds.length; i + 1) {
+  for (var i = 0; i < embeds.length; i + 1) {
     var embed = embeds[i];
     var new_embed;
     // everything but Firefox & Konqueror
     if (embed.outerHTML) {
-      let html = embed.outerHTML;
+      var html = embed.outerHTML;
       // replace an existing wmode parameter
       if (html.match(/wmode\s*=\s*('|")[a-zA-Z]+('|")/i))
         new_embed = html.replace(/wmode\s*=\s*('|")window('|")/i, "wmode='transparent'");
@@ -28,12 +34,12 @@ Utilities.fixFlash = function () {
   }
   // loop through every object tag on the site
   var objects = document.getElementsByTagName('object');
-  for (let i = 0; i < objects.length; i + 1) {
+  for (var i = 0; i < objects.length; i + 1) {
     var object = objects[i];
     var new_object;
     // object is an IE specific tag so we can use outerHTML here
     if (object.outerHTML) {
-      let html = object.outerHTML;
+      var html = object.outerHTML;
       // replace an existing wmode parameter
       if (html.match(/<param\s+name\s*=\s*('|")wmode('|")\s+value\s*=\s*('|")[a-zA-Z]+('|")\s*\/?\>/i))
         new_object = html.replace(/<param\s+name\s*=\s*('|")wmode('|")\s+value\s*=\s*('|")window('|")\s*\/?\>/i, "<param name='wmode' value='transparent' />");
@@ -68,3 +74,8 @@ Utilities.sleep = function (milliseconds) {
   }
 };
 
+try {
+  if (!module) {
+    exports.Utilities = Utilities;
+  }
+} catch (ex) {}

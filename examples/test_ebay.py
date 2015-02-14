@@ -21,7 +21,7 @@ def do_command(url, command, data={}):
   
 # Get a tab from the Great Britain
 
-data = {}
+data = {"engine": "gecko"}
 response = do_command("http://127.0.0.1:7331", "new", data)
 
 
@@ -49,14 +49,14 @@ data = {'script': 'self._page.onLoadFinished = function(){ console.log("HELP"); 
 response = do_command(url, "evaluateOnGecko", data)
 
 # Open URL
-data = {'url': 'http://www.bild.de', 'waitForResources': False}
+data = {'url': 'http://www.google.de', 'waitForResources': False}
 response = do_command(url, "open", data)
 
 
 data = {'timeout': 60000}
 response = do_command(url, "waitForResources", data)
 
-"""
+
 # Get Resources 
 response = do_command(url, "getResources")
 resources = json.loads(response.text)["resources"]
@@ -81,9 +81,6 @@ response = do_command(url, "evaluate", data)
 
 
 response = do_command(url, "getCookies", cookie)
-"""
-
-response = do_command(url, "getAds")
 
 response = do_command(url, "getConsoleLog")
 

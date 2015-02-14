@@ -1,10 +1,13 @@
 var fs = require('fs'),
-  Utils = require('utils');
+  Utils = require('./utils.js');
 
-var AdBlock = module.exports = function () {
+var AdBlock = {};
+
+var AdBlock = function () {
   'use strict';
   this.init();
 };
+
 
 AdBlock.prototype.init = function () {
   'use strict';
@@ -19,7 +22,7 @@ AdBlock.prototype.init = function () {
 AdBlock.prototype.parseFilterList = function (path) {
   'use strict';
   var self = this,
-    lines = fs.readFileSync(path, 'utf-8').trim().split(/\n+/),
+    lines = fs.read(path, 'utf-8').trim().split(/\n+/),
     blEntries = [],
     wlEntries = [],
     rule = null,
@@ -95,3 +98,19 @@ AdBlock.prototype.getSelectorsForDomain = function (domain) {
     selectors = self.selectors['+++'].slice() || [];
   return selectors.concat(self.selectors[Utils.getSitename(domain)] || []);
 };
+
+try {
+  if (exports) {
+    exports.AdBlock = AdBlock;
+  }
+} catch (ex) {
+  console.log(ex);
+}
+
+try {
+  if (module) {
+    AdBlock = module.exports;
+  }
+} catch (ex) {
+  console.log(ex);
+}

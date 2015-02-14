@@ -142,7 +142,7 @@ Seraph.prototype._sendUpdateToGod = function () {
   });
 };
 
-Seraph.prototype._new = function (callback) {
+Seraph.prototype._new = function (data, callback) {
   var self = this;
   var func = function (port) {
     console.log("GOT FREE PORT", port);
@@ -162,7 +162,7 @@ Seraph.prototype._new = function (callback) {
     self._reserverdPorts.push(port);
     var ip = self._debug ? "127.0.0.1" : self._ip;
 
-    self._angels[port] = new Summoner(ip, port, callback);
+    self._angels[port] = new Summoner(data.engine, ip, port, callback);
     self._angels[port].on('exit', onExit);
     // fire off a new update now that we have a new angel 
     self._sendUpdateToGod();
@@ -181,7 +181,6 @@ Seraph.prototype._announceAngel = function (data, callback) {
 Seraph.prototype._handleRequest = function (req, res) {
   var self = this;
   var url = req.url;
-  console.log(url);
   var data = req.body;
   var callback = function (data) {
     res.statusCode = 200;
@@ -191,7 +190,7 @@ Seraph.prototype._handleRequest = function (req, res) {
 
   switch (url) {
   case "/new":
-    self._new(callback);
+    self._new(data, callback);
     break;
   case "/announceAngel":
     self._announceAngel(data, callback);

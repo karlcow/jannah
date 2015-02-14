@@ -14,15 +14,18 @@ var acquire = require('acquire'),
   utilities = acquire('utilities'),
   winston = require('winston');
 
+var PHANTOM_COMMAND = "phantomjs",
+    SLIMER_COMMAND = "submodules/slimerjs/src/slimerjs";
+
 // TODO 
 // Summoner should be moved to his own file.
-var Summoner = module.exports = function (ip, port, callback) {
-  this.init(ip, port, callback);
+var Summoner = module.exports = function (engine, ip, port, callback) {
+  this.init(engine, ip, port, callback);
 };
 
 Summoner.prototype = new events.EventEmitter();
 
-Summoner.prototype.init = function (ip, port, callback) {
+Summoner.prototype.init = function (engine, ip, port, callback) {
   console.log(ip + ":" + port);
   var self = this;
   self._summonVerified = false;
@@ -33,7 +36,11 @@ Summoner.prototype.init = function (ip, port, callback) {
   self._angel = null;
   self._date = Date.create('today');
   console.log("Summoning Angel");
-  self._angel = spawn("submodules/slimerjs/src/slimerjs", ["angel.js", ip, port]);
+  if (engine === 'webkit')
+    self._angel = spawn(PHANTOM_COMMAND, ["angel.js", ip, port]);
+  else
+    self._angel = spawn(SLIMER_COMMAND, ["angel.js", ip, port]);
+    
   self._noSpawnTimer = timers.setTimeout(function () {
     self._onNoSpawn();
   }, 10000);
