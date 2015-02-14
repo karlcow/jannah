@@ -15,7 +15,7 @@ var acquire = require('acquire'),
   winston = require('winston');
 
 var PHANTOM_COMMAND = "phantomjs",
-    SLIMER_COMMAND = "submodules/slimerjs/src/slimerjs";
+  SLIMER_COMMAND = "submodules/slimerjs/src/slimerjs";
 
 // TODO 
 // Summoner should be moved to his own file.
@@ -40,7 +40,7 @@ Summoner.prototype.init = function (engine, ip, port, callback) {
     self._angel = spawn(PHANTOM_COMMAND, ["angel.js", ip, port]);
   else
     self._angel = spawn(SLIMER_COMMAND, ["angel.js", ip, port]);
-    
+
   self._noSpawnTimer = timers.setTimeout(function () {
     self._onNoSpawn();
   }, 10000);
@@ -79,7 +79,7 @@ Summoner.prototype._monitor = function () {
   var self = this;
   timers.clearTimeout(self._noSpawnTimer);
   console.log("Angel: " + self.id + " is alive.");
-  var uri = "http://127.0.0.1:" + self.id + "/ping";
+  var uri = "http://" + self._ip + ":" + self.id + "/ping";
   console.log(uri);
   var request = http.get(uri, function () {
       self._monitor();
