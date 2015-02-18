@@ -271,7 +271,12 @@ Angel.prototype._ping = function (callback) {
 
 Angel.prototype._evaluate = function (script, callback) {
   var self = this;
-  var result = self._page.evaluateJavaScript("(" + script + ")()");
+  var result = null;
+  if (typeof slimer !== 'undefined')
+    result = self._page.evaluateJavaScript("(" + script + ")()");
+  else
+    result = self._page.evaluateJavaScript(script);
+
   callback({
     script: script,
     result: result
