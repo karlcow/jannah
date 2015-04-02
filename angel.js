@@ -211,6 +211,10 @@ Angel.prototype._getScreenshot = function (callback) {
   var self = this;
   self._busy = true;
   utils.fixFlash();
+  var origSize = {
+    width: self._page.viewportSize.width,
+    height: self._page.viewportSize.height
+  };
   self._page.viewportSize = {
     width: 1024,
     height: 4096
@@ -218,8 +222,8 @@ Angel.prototype._getScreenshot = function (callback) {
   window.setTimeout(function () {
     self._waitForResources(60000, function () {
       self._page.viewportSize = {
-        width: 1024,
-        height: 768
+        width: origSize.width,
+        height: origSize.height
       };
       var base64 = self._page.renderBase64('PNG');
       self._busy = false;
@@ -311,6 +315,17 @@ Angel.prototype._getCookies = function (callback) {
   });
 };
 
+Angel.prototype._setScreenSize = function (size, callback) {
+  var self = this;
+  self._page.viewportSize = {
+    width: size.width,
+    height: size.height
+  };
+  callback({
+    size: self._page.viewportSize
+  });
+};
+
 
 Angel.prototype._resetAutoDestruct = function () {
   var self = this;
@@ -387,6 +402,10 @@ Angel.prototype._handleRequest = function (request, response) {
   case "/waitForResources":
     self._resetAutoDestruct();
     self._waitForResources(data.timeout, callback);
+    break;
+  case "/setScreenSize":
+    self._resetAutoDestruct();
+    self._setScreenSize(data.size, callback);
     break;
   default:
     console.log("WHAT DO YOU WANT?");

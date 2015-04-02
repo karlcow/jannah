@@ -66,6 +66,8 @@ for key in keys:
     print key, json.dumps(resources[key], sort_keys=True, indent=4, separators=(',', ': '))
 print ""
 
+data = {"size": {"width": 1280, "height":400}}
+response = do_command(url, "setScreenSize", data)
 
 # Take Screenshot and return base64 string under data
 response = do_command(url, "getScreenshot")
