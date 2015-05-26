@@ -49,7 +49,7 @@
 "iterator" : false, // true: Tolerate using the `__iterator__` property
 "lastsemic" : false, // true: Tolerate omitting a semicolon for the last statement of a 1-line block
 "laxbreak" : false, // true: Tolerate possibly unsafe line breakings
-"laxcomma" : true, // true: Tolerate comma-first style coding
+"laxcomma" : false, // true: Tolerate comma-first style coding
 "loopfunc" : false, // true: Tolerate functions being defined in loops
 "multistr" : true, // true: Tolerate multi-line strings
 "proto" : false, // true: Tolerate using the `__proto__` property
@@ -82,5 +82,5 @@
 "white" : false, // true: Check against strict whitespace and indentation rules
 
 // Custom Globals
-"globals" : [ "$", "io", "moment", "angular", "it", "describe", "socket", "_", "toastr"] // additional predefined global variables
+"globals" : [ "$", "io", "moment", "angular", "it", "describe", "socket", "_", "toastr", "require"] // additional predefined global variables
 }
